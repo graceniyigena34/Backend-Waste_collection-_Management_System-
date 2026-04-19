@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    /* File structure */
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    /* Node.js setup */
+    "module": "commonjs",
+    "target": "ES6",
+    "lib": ["ES6"],
+    "types": ["node"],
+
+    /* Interop */
+    "esModuleInterop": true,
+
+    /* Strictness */
+    "strict": true,
+
+    /* Quality */
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
