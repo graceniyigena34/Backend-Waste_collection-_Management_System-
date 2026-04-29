@@ -16,7 +16,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error("JWT_SECRET environment variable is not set");
 
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "1d") as jwt.SignOptions["expiresIn"];
-const VALID_ROLES: UserRole[] = ["Citizen", "Collector", "Admin"];
+const VALID_ROLES: UserRole[] = ["citizen", "waste_collector", "admin"];
 
 const sanitizeString = (value: unknown): string =>
   typeof value === "string" ? value.trim() : "";

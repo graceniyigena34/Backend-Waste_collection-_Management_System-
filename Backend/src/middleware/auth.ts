@@ -25,7 +25,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 };
 
 export const authorizeAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
-  if (req.user?.role !== "Admin") {
+  if (req.user?.role !== "admin") {
     res.status(403).json({ message: "Admin access required" });
     return;
   }
@@ -33,7 +33,7 @@ export const authorizeAdmin = (req: AuthRequest, res: Response, next: NextFuncti
 };
 
 export const authorizeDriver = (req: AuthRequest, res: Response, next: NextFunction): void => {
-  if (req.user?.role !== "Collector" && req.user?.role !== "Admin") {
+  if (req.user?.role !== "waste_collector" && req.user?.role !== "admin") {
     res.status(403).json({ message: "Driver or Admin access required" });
     return;
   }

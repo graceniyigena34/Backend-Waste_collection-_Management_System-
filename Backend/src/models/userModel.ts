@@ -1,6 +1,6 @@
 import { pool } from "../config/db";
 
-export type UserRole = "Citizen" | "Collector" | "Admin";
+export type UserRole = "citizen" | "waste_collector" | "admin";
 
 export interface User {
   id: number;
@@ -13,16 +13,22 @@ export interface User {
 }
 
 export const initUsersTable = async () => {
+  // Create table if it doesn't exist
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       full_name VARCHAR(100) NOT NULL,
       email VARCHAR(100) UNIQUE NOT NULL,
-      telephone VARCHAR(20) NOT NULL,
+      telephone VARCHAR(20) NOT NULL DEFAULT '',
       role VARCHAR(20) NOT NULL DEFAULT 'Citizen',
       password VARCHAR(255) NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
     )
+  `);
+
+  // Migration: add telephone column if it doesn't exist (handles existing tables)
+  await pool.query(`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS telephone VARCHAR(20) NOT NULL DEFAULT ''
   `);
 };
 

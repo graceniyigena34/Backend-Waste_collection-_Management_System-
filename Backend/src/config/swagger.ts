@@ -8,7 +8,7 @@ const options: swaggerJsdoc.Options = {
       version: "1.0.0",
       description: "API documentation for GreenEx waste collection platform",
     },
-    servers: [{ url: "http://localhost:5000" }],
+    servers: [{ url: "http://localhost:8000" }],
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -37,8 +37,8 @@ const options: swaggerJsdoc.Options = {
             telephone: { type: "string", example: "+250 7XX XXX XXX" },
             role: {
               type: "string",
-              enum: ["Citizen", "Collector", "Admin"],
-              default: "Citizen",
+              enum: ["citizen", "waste_collector", "admin"],
+              default: "citizen",
             },
             password: { type: "string", minLength: 6, example: "secret123" },
             confirm_password: { type: "string", example: "secret123" },
@@ -69,7 +69,7 @@ const options: swaggerJsdoc.Options = {
             telephone: { type: "string", example: "+250 7XX XXX XXX" },
             role: {
               type: "string",
-              enum: ["Citizen", "Collector", "Admin"],
+              enum: ["citizen", "waste_collector", "admin"],
             },
           },
         },
