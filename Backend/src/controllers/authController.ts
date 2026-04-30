@@ -9,7 +9,7 @@ import {
   deleteUser,
   getAllUsers,
   UserRole,
-} from "../models/usermodel";
+} from "../models/userModel";
 import { AuthRequest } from "../middleware/auth";
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -21,6 +21,16 @@ const VALID_ROLES: UserRole[] = ["citizen", "waste_collector", "admin"];
 const sanitizeString = (value: unknown): string =>
   typeof value === "string" ? value.trim() : "";
 
+const normalizeRole = (value: unknown): UserRole | null => {
+  const role = sanitizeString(value).toLowerCase().replace(/[-\s]+/g, "_");
+
+  if (role === "citizen" || role === "admin" || role === "waste_collector") {
+    return role;
+  }
+
+  return null;
+};
+
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export const register = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -29,10 +39,17 @@ export const register = async (req: AuthRequest, res: Response): Promise<void> =
   const telephone = sanitizeString(req.body.telephone);
   const password = sanitizeString(req.body.password);
   const confirm_password = sanitizeString(req.body.confirm_password);
-  const safeRole: UserRole = VALID_ROLES.includes(req.body.role) ? req.body.role : "Citizen";
+  const safeRole = normalizeRole(req.body.role);
 
   if (!full_name || !email || !telephone || !password || !confirm_password) {
     res.status(400).json({ message: "All fields are required" });
+    return;
+  }
+  if (!safeRole || !VALID_ROLES.includes(safeRole)) {
+    res.status(400).json({
+      message:
+        "Invalid role. Allowed roles: admin, citizen, waste_collector (or waste collector).",
+    });
     return;
   }
   if (password !== confirm_password) {

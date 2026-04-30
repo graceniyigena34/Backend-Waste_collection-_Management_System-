@@ -20,7 +20,7 @@ export const initUsersTable = async () => {
       full_name VARCHAR(100) NOT NULL,
       email VARCHAR(100) UNIQUE NOT NULL,
       telephone VARCHAR(20) NOT NULL DEFAULT '',
-      role VARCHAR(20) NOT NULL DEFAULT 'Citizen',
+      role VARCHAR(20) NOT NULL DEFAULT 'citizen',
       password VARCHAR(255) NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
     )
@@ -29,6 +29,20 @@ export const initUsersTable = async () => {
   // Migration: add telephone column if it doesn't exist (handles existing tables)
   await pool.query(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS telephone VARCHAR(20) NOT NULL DEFAULT ''
+  `);
+
+  // Migration: enforce canonical role default and normalize common existing values.
+  await pool.query(`
+    ALTER TABLE users ALTER COLUMN role SET DEFAULT 'citizen'
+  `);
+
+  await pool.query(`
+    UPDATE users
+    SET role = CASE
+      WHEN LOWER(REPLACE(REPLACE(role, '-', '_'), ' ', '_')) = 'waste_collector' THEN 'waste_collector'
+      WHEN LOWER(role) = 'admin' THEN 'admin'
+      ELSE 'citizen'
+    END
   `);
 };
 

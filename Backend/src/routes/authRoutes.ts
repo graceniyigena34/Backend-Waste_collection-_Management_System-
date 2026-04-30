@@ -8,7 +8,7 @@ import {
   listUsers,
   updateUserById,
   deleteUserById,
-} from "../controllers/authcontroller";
+} from "../controllers/authController";
 import { authenticate, authorizeAdmin } from "../middleware/auth";
 
 const router = Router();

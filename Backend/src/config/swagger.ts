@@ -30,7 +30,7 @@ const options: swaggerJsdoc.Options = {
       schemas: {
         RegisterRequest: {
           type: "object",
-          required: ["full_name", "email", "telephone", "password", "confirm_password"],
+          required: ["full_name", "email", "telephone", "role", "password", "confirm_password"],
           properties: {
             full_name: { type: "string", example: "Grace Uwera" },
             email: { type: "string", format: "email", example: "grace@example.com" },
@@ -38,7 +38,6 @@ const options: swaggerJsdoc.Options = {
             role: {
               type: "string",
               enum: ["citizen", "waste_collector", "admin"],
-              default: "citizen",
             },
             password: { type: "string", minLength: 6, example: "secret123" },
             confirm_password: { type: "string", example: "secret123" },

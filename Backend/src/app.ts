@@ -11,14 +11,16 @@ import scheduleRoutes from "./routes/scheduleRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
 import complaintRoutes from "./routes/complaintRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
+import wasteCollectorRoutes from "./routes/wasteCollectorRoutes";
 
 // Table initializers
-import { initUsersTable } from "./models/usermodel";
+import { initUsersTable } from "./models/userModel";
 import { initHouseholdsTable } from "./models/householdModel";
 import { initSchedulesTable } from "./models/scheduleModel";
 import { initPaymentsTable } from "./models/paymentModel";
 import { initComplaintsTable } from "./models/complaintModel";
 import { initNotificationsTable } from "./models/notificationModel";
+import { initWasteCompaniesTable, initWasteCollectorTables } from "./models/wasteCollectorModel";
 
 dotenv.config();
 
@@ -37,6 +39,7 @@ app.use("/api/schedules", scheduleRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/waste-collectors", wasteCollectorRoutes);
 
 // Initialize all tables in order (respects foreign key dependencies)
 const initDB = async () => {
@@ -46,6 +49,8 @@ const initDB = async () => {
   await initPaymentsTable();
   await initComplaintsTable();
   await initNotificationsTable();
+  await initWasteCompaniesTable();
+  await initWasteCollectorTables();
   console.log("✅ All database tables initialized");
 };
 
