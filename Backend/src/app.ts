@@ -12,6 +12,7 @@ import paymentRoutes from "./routes/paymentRoutes";
 import complaintRoutes from "./routes/complaintRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import wasteCollectorRoutes from "./routes/wasteCollectorRoutes";
+import companyProfileRoutes from "./routes/companyProfileRoutes";
 
 // Table initializers
 import { initUsersTable } from "./models/userModel";
@@ -40,6 +41,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/waste-collectors", wasteCollectorRoutes);
+app.use("/api/companies", companyProfileRoutes);
 
 // Initialize all tables in order (respects foreign key dependencies)
 const initDB = async () => {

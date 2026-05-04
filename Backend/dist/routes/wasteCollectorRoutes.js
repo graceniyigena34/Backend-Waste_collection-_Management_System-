@@ -1,50 +1,10 @@
-import { Router } from "express";
-import {
-  registerCollector,
-  getCollectorProfile,
-  getMyProfile,
-  getCollectorsByCompany,
-  getCollectorStats,
-  updateCollectorProfile,
-  updateMyProfile,
-  changeCollectorStatus,
-  markOnDuty,
-  markOffDuty,
-  verifyCollector,
-  suspendCollector,
-  getPerformanceMetrics,
-  updatePerformance,
-  getTopPerformers as getTopPerformersController,
-  assignRoute,
-  getMyAssignments,
-  getAssignmentsByDateRange,
-  updateAssignmentStatus,
-  removeCollector,
-  searchCollectors,
-  getCollectorCompleteInfo,
-  registerDriver,
-  getDriverProfile,
-  getCompanyDrivers,
-  updateDriver,
-  registerManager,
-  getManagerProfile,
-  getCompanyManagers,
-  getManagerTeam,
-  updateManager,
-  getCollectorsByRoleController,
-  getAllCollectorsData,
-  getCollectorData,
-  getCollectorsFiltered,
-  createCollectorData,
-  updateCollectorData,
-  deleteCollectorData,
-} from "../controllers/wasteCollectorController";
-import { authenticate, authorizeAdmin } from "../middleware/auth";
-
-const router = Router();
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const wasteCollectorController_1 = require("../controllers/wasteCollectorController");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
 // ─── Public / Auth Routes ───────────────────────────────────────────────────
-
 /**
  * @swagger
  * /api/waste-collectors/register:
@@ -145,10 +105,8 @@ const router = Router();
  *       409:
  *         description: Employee ID already exists
  */
-router.post("/register", registerCollector);
-
+router.post("/register", wasteCollectorController_1.registerCollector);
 // ─── Collector Profile Routes ───────────────────────────────────────────────
-
 /**
  * @swagger
  * /api/waste-collectors/profile:
@@ -163,8 +121,7 @@ router.post("/register", registerCollector);
  *       404:
  *         description: Collector not found
  */
-router.get("/profile", authenticate, getMyProfile);
-
+router.get("/profile", auth_1.authenticate, wasteCollectorController_1.getMyProfile);
 /**
  * @swagger
  * /api/waste-collectors/profile:
@@ -192,8 +149,7 @@ router.get("/profile", authenticate, getMyProfile);
  *       404:
  *         description: Profile not found
  */
-router.put("/profile", authenticate, updateMyProfile);
-
+router.put("/profile", auth_1.authenticate, wasteCollectorController_1.updateMyProfile);
 /**
  * @swagger
  * /api/waste-collectors/{id}:
@@ -212,8 +168,7 @@ router.put("/profile", authenticate, updateMyProfile);
  *       404:
  *         description: Collector not found
  */
-router.get("/:id", authenticate, getCollectorProfile);
-
+router.get("/:id", auth_1.authenticate, wasteCollectorController_1.getCollectorProfile);
 /**
  * @swagger
  * /api/waste-collectors/{id}/complete-info:
@@ -232,8 +187,7 @@ router.get("/:id", authenticate, getCollectorProfile);
  *       404:
  *         description: Collector not found
  */
-router.get("/:id/complete-info", authenticate, getCollectorCompleteInfo);
-
+router.get("/:id/complete-info", auth_1.authenticate, wasteCollectorController_1.getCollectorCompleteInfo);
 /**
  * @swagger
  * /api/waste-collectors/{id}:
@@ -260,8 +214,7 @@ router.get("/:id/complete-info", authenticate, getCollectorCompleteInfo);
  *       404:
  *         description: Collector not found
  */
-router.put("/:id", authenticate, updateCollectorProfile);
-
+router.put("/:id", auth_1.authenticate, wasteCollectorController_1.updateCollectorProfile);
 /**
  * @swagger
  * /api/waste-collectors/{id}:
@@ -290,10 +243,8 @@ router.put("/:id", authenticate, updateCollectorProfile);
  *       404:
  *         description: Collector not found
  */
-router.delete("/:id", authenticate, removeCollector);
-
+router.delete("/:id", auth_1.authenticate, wasteCollectorController_1.removeCollector);
 // ─── Company Management Routes ───────────────────────────────────────────────
-
 /**
  * @swagger
  * /api/waste-collectors/company/{company_id}:
@@ -329,8 +280,7 @@ router.delete("/:id", authenticate, removeCollector);
  *       200:
  *         description: List of collectors
  */
-router.get("/company/:company_id", authenticate, getCollectorsByCompany);
-
+router.get("/company/:company_id", auth_1.authenticate, wasteCollectorController_1.getCollectorsByCompany);
 /**
  * @swagger
  * /api/waste-collectors/company/{company_id}/stats:
@@ -361,8 +311,7 @@ router.get("/company/:company_id", authenticate, getCollectorsByCompany);
  *       200:
  *         description: Collector statistics
  */
-router.get("/company/:company_id/stats", authenticate, getCollectorStats);
-
+router.get("/company/:company_id/stats", auth_1.authenticate, wasteCollectorController_1.getCollectorStats);
 /**
  * @swagger
  * /api/waste-collectors/company/{company_id}/search:
@@ -393,10 +342,8 @@ router.get("/company/:company_id/stats", authenticate, getCollectorStats);
  *       200:
  *         description: Search results
  */
-router.get("/company/:company_id/search", authenticate, searchCollectors);
-
+router.get("/company/:company_id/search", auth_1.authenticate, wasteCollectorController_1.searchCollectors);
 // ─── Status Management Routes ──────────────────────────────────────────────
-
 /**
  * @swagger
  * /api/waste-collectors/status/on-duty:
@@ -409,8 +356,7 @@ router.get("/company/:company_id/search", authenticate, searchCollectors);
  *       200:
  *         description: Marked as on-duty
  */
-router.post("/status/on-duty", authenticate, markOnDuty);
-
+router.post("/status/on-duty", auth_1.authenticate, wasteCollectorController_1.markOnDuty);
 /**
  * @swagger
  * /api/waste-collectors/status/off-duty:
@@ -423,8 +369,7 @@ router.post("/status/on-duty", authenticate, markOnDuty);
  *       200:
  *         description: Marked as off-duty
  */
-router.post("/status/off-duty", authenticate, markOffDuty);
-
+router.post("/status/off-duty", auth_1.authenticate, wasteCollectorController_1.markOffDuty);
 /**
  * @swagger
  * /api/waste-collectors/{id}/status:
@@ -455,8 +400,7 @@ router.post("/status/off-duty", authenticate, markOffDuty);
  *       200:
  *         description: Status updated
  */
-router.put("/:id/status", authenticate, changeCollectorStatus);
-
+router.put("/:id/status", auth_1.authenticate, wasteCollectorController_1.changeCollectorStatus);
 /**
  * @swagger
  * /api/waste-collectors/{id}/suspend:
@@ -483,10 +427,8 @@ router.put("/:id/status", authenticate, changeCollectorStatus);
  *       200:
  *         description: Collector suspended
  */
-router.post("/:id/suspend", authenticate, suspendCollector);
-
+router.post("/:id/suspend", auth_1.authenticate, wasteCollectorController_1.suspendCollector);
 // ─── Verification Routes ────────────────────────────────────────────────────
-
 /**
  * @swagger
  * /api/waste-collectors/{id}/verify:
@@ -515,10 +457,8 @@ router.post("/:id/suspend", authenticate, suspendCollector);
  *       200:
  *         description: Verification status updated
  */
-router.post("/:id/verify", authenticate, verifyCollector);
-
+router.post("/:id/verify", auth_1.authenticate, wasteCollectorController_1.verifyCollector);
 // ─── Performance Routes ────────────────────────────────────────────────────
-
 /**
  * @swagger
  * /api/waste-collectors/{id}/performance:
@@ -537,8 +477,7 @@ router.post("/:id/verify", authenticate, verifyCollector);
  *       200:
  *         description: Performance history
  */
-router.get("/:id/performance", authenticate, getPerformanceMetrics);
-
+router.get("/:id/performance", auth_1.authenticate, wasteCollectorController_1.getPerformanceMetrics);
 /**
  * @swagger
  * /api/waste-collectors/{id}/performance:
@@ -580,8 +519,7 @@ router.get("/:id/performance", authenticate, getPerformanceMetrics);
  *       200:
  *         description: Metrics updated
  */
-router.put("/:id/performance", authenticate, updatePerformance);
-
+router.put("/:id/performance", auth_1.authenticate, wasteCollectorController_1.updatePerformance);
 /**
  * @swagger
  * /api/waste-collectors/company/{company_id}/top-performers:
@@ -605,10 +543,8 @@ router.put("/:id/performance", authenticate, updatePerformance);
  *       200:
  *         description: Top performers
  */
-router.get("/company/:company_id/top-performers", authenticate, getTopPerformersController);
-
+router.get("/company/:company_id/top-performers", auth_1.authenticate, wasteCollectorController_1.getTopPerformers);
 // ─── Assignment Routes ─────────────────────────────────────────────────────
-
 /**
  * @swagger
  * /api/waste-collectors/assignments:
@@ -643,8 +579,7 @@ router.get("/company/:company_id/top-performers", authenticate, getTopPerformers
  *       201:
  *         description: Route assigned
  */
-router.post("/assignments", authenticate, assignRoute);
-
+router.post("/assignments", auth_1.authenticate, wasteCollectorController_1.assignRoute);
 /**
  * @swagger
  * /api/waste-collectors/my-assignments:
@@ -657,8 +592,7 @@ router.post("/assignments", authenticate, assignRoute);
  *       200:
  *         description: List of assignments
  */
-router.get("/my-assignments", authenticate, getMyAssignments);
-
+router.get("/my-assignments", auth_1.authenticate, wasteCollectorController_1.getMyAssignments);
 /**
  * @swagger
  * /api/waste-collectors/{id}/assignments:
@@ -683,8 +617,7 @@ router.get("/my-assignments", authenticate, getMyAssignments);
  *       200:
  *         description: List of assignments
  */
-router.get("/:id/assignments", authenticate, getAssignmentsByDateRange);
-
+router.get("/:id/assignments", auth_1.authenticate, wasteCollectorController_1.getAssignmentsByDateRange);
 /**
  * @swagger
  * /api/waste-collectors/assignments/{assignment_id}:
@@ -722,10 +655,8 @@ router.get("/:id/assignments", authenticate, getAssignmentsByDateRange);
  *       200:
  *         description: Assignment updated
  */
-router.put("/assignments/:assignment_id", authenticate, updateAssignmentStatus);
-
+router.put("/assignments/:assignment_id", auth_1.authenticate, wasteCollectorController_1.updateAssignmentStatus);
 // ─── Driver Routes ──────────────────────────────────────────────────────────
-
 /**
  * @swagger
  * /api/waste-collectors/drivers/register:
@@ -758,8 +689,7 @@ router.put("/assignments/:assignment_id", authenticate, updateAssignmentStatus);
  *       201:
  *         description: Driver registered
  */
-router.post("/drivers/register", authenticate, registerDriver);
-
+router.post("/drivers/register", auth_1.authenticate, wasteCollectorController_1.registerDriver);
 /**
  * @swagger
  * /api/waste-collectors/drivers/{id}:
@@ -778,8 +708,7 @@ router.post("/drivers/register", authenticate, registerDriver);
  *       200:
  *         description: Driver profile
  */
-router.get("/drivers/:id", authenticate, getDriverProfile);
-
+router.get("/drivers/:id", auth_1.authenticate, wasteCollectorController_1.getDriverProfile);
 /**
  * @swagger
  * /api/waste-collectors/drivers/{id}:
@@ -804,8 +733,7 @@ router.get("/drivers/:id", authenticate, getDriverProfile);
  *       200:
  *         description: Driver updated
  */
-router.put("/drivers/:id", authenticate, updateDriver);
-
+router.put("/drivers/:id", auth_1.authenticate, wasteCollectorController_1.updateDriver);
 /**
  * @swagger
  * /api/waste-collectors/company/{company_id}/drivers:
@@ -824,10 +752,8 @@ router.put("/drivers/:id", authenticate, updateDriver);
  *       200:
  *         description: List of drivers
  */
-router.get("/company/:company_id/drivers", authenticate, getCompanyDrivers);
-
+router.get("/company/:company_id/drivers", auth_1.authenticate, wasteCollectorController_1.getCompanyDrivers);
 // ─── Manager Routes ─────────────────────────────────────────────────────────
-
 /**
  * @swagger
  * /api/waste-collectors/managers/register:
@@ -859,8 +785,7 @@ router.get("/company/:company_id/drivers", authenticate, getCompanyDrivers);
  *       201:
  *         description: Manager registered
  */
-router.post("/managers/register", authenticate, registerManager);
-
+router.post("/managers/register", auth_1.authenticate, wasteCollectorController_1.registerManager);
 /**
  * @swagger
  * /api/waste-collectors/managers/{id}:
@@ -879,8 +804,7 @@ router.post("/managers/register", authenticate, registerManager);
  *       200:
  *         description: Manager profile
  */
-router.get("/managers/:id", authenticate, getManagerProfile);
-
+router.get("/managers/:id", auth_1.authenticate, wasteCollectorController_1.getManagerProfile);
 /**
  * @swagger
  * /api/waste-collectors/managers/{id}:
@@ -905,8 +829,7 @@ router.get("/managers/:id", authenticate, getManagerProfile);
  *       200:
  *         description: Manager updated
  */
-router.put("/managers/:id", authenticate, updateManager);
-
+router.put("/managers/:id", auth_1.authenticate, wasteCollectorController_1.updateManager);
 /**
  * @swagger
  * /api/waste-collectors/company/{company_id}/managers:
@@ -925,8 +848,7 @@ router.put("/managers/:id", authenticate, updateManager);
  *       200:
  *         description: List of managers
  */
-router.get("/company/:company_id/managers", authenticate, getCompanyManagers);
-
+router.get("/company/:company_id/managers", auth_1.authenticate, wasteCollectorController_1.getCompanyManagers);
 /**
  * @swagger
  * /api/waste-collectors/managers/{manager_id}/team:
@@ -945,10 +867,8 @@ router.get("/company/:company_id/managers", authenticate, getCompanyManagers);
  *       200:
  *         description: List of team members
  */
-router.get("/managers/:manager_id/team", authenticate, getManagerTeam);
-
+router.get("/managers/:manager_id/team", auth_1.authenticate, wasteCollectorController_1.getManagerTeam);
 // ─── Filter by Role ────────────────────────────────────────────────────────
-
 /**
  * @swagger
  * /api/waste-collectors/company/{company_id}/by-role:
@@ -973,170 +893,5 @@ router.get("/managers/:manager_id/team", authenticate, getManagerTeam);
  *       200:
  *         description: List of collectors by role
  */
-router.get("/company/:company_id/by-role", authenticate, getCollectorsByRoleController);
-
-// ─── Data-Driven Database API (Full Database Access) ──────────────────────
-
-/**
- * @swagger
- * /api/waste-collectors/data/all:
- *   get:
- *     summary: Get all collectors with full database fields
- *     tags: [Data API]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: company_id
- *         in: query
- *         schema:
- *           type: number
- *       - name: status
- *         in: query
- *         schema:
- *           type: string
- *       - name: role
- *         in: query
- *         schema:
- *           type: string
- *       - name: limit
- *         in: query
- *         schema:
- *           type: number
- *       - name: offset
- *         in: query
- *         schema:
- *           type: number
- *     responses:
- *       200:
- *         description: List of all collectors with database fields
- */
-router.get("/data/all", authenticate, getAllCollectorsData);
-
-/**
- * @swagger
- * /api/waste-collectors/data/{id}:
- *   get:
- *     summary: Get single collector with all database fields
- *     tags: [Data API]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: number
- *     responses:
- *       200:
- *         description: Complete collector record
- *       404:
- *         description: Collector not found
- */
-router.get("/data/:id", authenticate, getCollectorData);
-
-/**
- * @swagger
- * /api/waste-collectors/data/filter:
- *   get:
- *     summary: Filter collectors by database fields
- *     tags: [Data API]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: company_id
- *         in: query
- *         required: true
- *         schema:
- *           type: number
- *       - name: status
- *         in: query
- *         schema:
- *           type: string
- *       - name: role
- *         in: query
- *         schema:
- *           type: string
- *       - name: zone_id
- *         in: query
- *         schema:
- *           type: number
- *       - name: employee_id
- *         in: query
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Filtered collector list
- */
-router.get("/data/filter", authenticate, getCollectorsFiltered);
-
-/**
- * @swagger
- * /api/waste-collectors/data/create:
- *   post:
- *     summary: Create new collector with database fields
- *     tags: [Data API]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - user_id
- *               - company_id
- *               - employee_id
- *               - full_name
- *               - email
- *               - phone
- *               - hire_date
- *               - contract_type
- *     responses:
- *       201:
- *         description: Collector created
- */
-router.post("/data/create", authenticate, createCollectorData);
-
-/**
- * @swagger
- * /api/waste-collectors/data/{id}:
- *   put:
- *     summary: Update collector with database fields
- *     tags: [Data API]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: number
- *     responses:
- *       200:
- *         description: Collector updated
- */
-router.put("/data/:id", authenticate, updateCollectorData);
-
-/**
- * @swagger
- * /api/waste-collectors/data/{id}:
- *   delete:
- *     summary: Delete collector and related data
- *     tags: [Data API]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: number
- *     responses:
- *       200:
- *         description: Collector deleted
- */
-router.delete("/data/:id", authenticate, deleteCollectorData);
-
-export default router;
+router.get("/company/:company_id/by-role", auth_1.authenticate, wasteCollectorController_1.getCollectorsByRoleController);
+exports.default = router;

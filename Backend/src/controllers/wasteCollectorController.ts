@@ -941,3 +941,242 @@ export const getCollectorsByRoleController = async (req: AuthRequest, res: Respo
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+
+// ─── Data-Driven Database API ───────────────────────────────────────────────
+
+/**
+ * GET all collectors from database with full fields
+ * Returns: Array of complete collector records with all database fields
+ */
+export const getAllCollectorsData = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { limit = "50", offset = "0", company_id, status, role } = req.query;
+
+    let collectors: any[] = [];
+
+    if (company_id) {
+      collectors = await getWasteCollectorsByCompany(Number(company_id));
+    } else {
+      collectors = await getAllWasteCollectors(Number(limit), Number(offset));
+    }
+
+    // Apply filters
+    if (status) {
+      collectors = collectors.filter((c) => c.status === status);
+    }
+    if (role) {
+      collectors = collectors.filter((c) => c.role === role);
+    }
+
+    res.json({
+      count: collectors.length,
+      limit: Number(limit),
+      offset: Number(offset),
+      data: collectors,
+    });
+  } catch (error: any) {
+    console.error("Error fetching collectors:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
+/**
+ * GET single collector with all database fields and role-specific data
+ * Returns: Complete collector record with driver or manager details
+ */
+export const getCollectorData = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const collector = await getWasteCollectorById(Number(id));
+
+    if (!collector) {
+      res.status(404).json({ message: "Collector not found" });
+      return;
+    }
+
+    // Get role-specific data
+    let roleSpecificData = null;
+    if (collector.role === "driver") {
+      roleSpecificData = await getDriverInfo(Number(id));
+    } else if (collector.role === "manager") {
+      roleSpecificData = await getManagerInfo(Number(id));
+    }
+
+    res.json({
+      ...collector,
+      role_data: roleSpecificData,
+    });
+  } catch (error: any) {
+    console.error("Error fetching collector data:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
+/**
+ * GET collectors filtered by multiple database fields
+ * Query params: company_id, status, role, zone_id, employee_id
+ */
+export const getCollectorsFiltered = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { company_id, status, role, zone_id, employee_id } = req.query;
+
+    if (!company_id) {
+      res.status(400).json({ message: "company_id is required" });
+      return;
+    }
+
+    let collectors = await getWasteCollectorsByCompany(Number(company_id));
+
+    // Apply filters
+    if (status) collectors = collectors.filter((c) => c.status === status);
+    if (role) collectors = collectors.filter((c) => c.role === role);
+    if (zone_id) collectors = collectors.filter((c) => c.assigned_zone_id === Number(zone_id));
+    if (employee_id) collectors = collectors.filter((c) => c.employee_id === employee_id);
+
+    res.json({
+      filters: { company_id, status, role, zone_id, employee_id },
+      count: collectors.length,
+      collectors,
+    });
+  } catch (error: any) {
+    console.error("Error filtering collectors:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
+/**
+ * CREATE collector with database validation
+ * Accepts: All database fields from waste_collectors table
+ */
+export const createCollectorData = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const {
+      user_id,
+      company_id,
+      employee_id,
+      full_name,
+      email,
+      phone,
+      role = "driver",
+      identification_type,
+      identification_number,
+      date_of_birth,
+      address,
+      hire_date,
+      salary,
+      contract_type,
+      vehicle_id,
+      assigned_zone_id,
+    } = req.body;
+
+    // Validate required fields
+    const requiredFields = ["user_id", "company_id", "employee_id", "full_name", "email", "phone", "hire_date", "contract_type"];
+    const missingFields = requiredFields.filter((field) => !req.body[field]);
+
+    if (missingFields.length > 0) {
+      res.status(400).json({ message: `Missing required fields: ${missingFields.join(", ")}` });
+      return;
+    }
+
+    // Check if employee_id already exists
+    const existing = await getWasteCollectorByEmployeeId(employee_id);
+    if (existing) {
+      res.status(409).json({ message: "Employee ID already exists" });
+      return;
+    }
+
+    const newCollector = await createWasteCollector({
+      user_id: Number(user_id),
+      company_id: Number(company_id),
+      employee_id,
+      full_name,
+      email,
+      phone,
+      role: role as CollectorRole,
+      status: "active",
+      verification_status: "pending",
+      identification_type,
+      identification_number,
+      date_of_birth: date_of_birth ? new Date(date_of_birth) : new Date(),
+      address,
+      assigned_zone_id: assigned_zone_id ? Number(assigned_zone_id) : undefined,
+      hire_date: new Date(hire_date),
+      salary: salary ? Number(salary) : 0,
+      contract_type,
+      vehicle_id: vehicle_id ? Number(vehicle_id) : undefined,
+      documents_verified: false,
+      performance_rating: 0,
+      total_collections: 0,
+      active_routes: 0,
+    });
+
+    res.status(201).json({
+      message: "Collector created successfully",
+      collector: newCollector,
+    });
+  } catch (error: any) {
+    console.error("Error creating collector:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
+/**
+ * UPDATE collector database record
+ * Accepts: Any database fields to update
+ */
+export const updateCollectorData = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    // Don't allow direct status/verification updates through this endpoint
+    delete updates.status;
+    delete updates.verification_status;
+    delete updates.created_at;
+
+    const updated = await updateWasteCollector(Number(id), updates);
+
+    if (!updated) {
+      res.status(404).json({ message: "Collector not found" });
+      return;
+    }
+
+    res.json({
+      message: "Collector updated successfully",
+      collector: updated,
+    });
+  } catch (error: any) {
+    console.error("Error updating collector:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
+/**
+ * DELETE collector and all related data
+ */
+export const deleteCollectorData = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const collector = await getWasteCollectorById(Number(id));
+    if (!collector) {
+      res.status(404).json({ message: "Collector not found" });
+      return;
+    }
+
+    const deleted = await deleteWasteCollector(Number(id));
+
+    if (!deleted) {
+      res.status(400).json({ message: "Failed to delete collector" });
+      return;
+    }
+
+    res.json({
+      message: "Collector deleted successfully",
+      collector_id: id,
+    });
+  } catch (error: any) {
+    console.error("Error deleting collector:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
