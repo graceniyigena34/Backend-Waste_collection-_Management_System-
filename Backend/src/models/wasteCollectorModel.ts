@@ -95,17 +95,175 @@ export interface CollectorAssignment {
   created_at?: Date;
 }
 
+export interface WasteCompanyProfile {
+  id: number;
+  company_name: string;
+  email: string;
+  phone: string;
+  tin?: string;
+  address?: string;
+  description?: string;
+  district?: string;
+  sector?: string;
+  cell?: string;
+  village?: string;
+  company_type?: string;
+  years_of_experience?: number;
+  number_of_employees?: number;
+  vehicles?: Array<any>;
+  certificates?: Array<any>;
+  status: "pending" | "approved" | "rejected" | "suspended";
+  is_active: boolean;
+  created_at?: Date;
+  updated_at?: Date;
+}
+
 // ─── Waste Companies Table ──────────────────────────────────────────────────
 
 export const initWasteCompaniesTable = async () => {
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS waste_companies (
+    CREATE TABLE IF NOT EXISTS waste_company_profiles (
       id SERIAL PRIMARY KEY,
-      company_name VARCHAR(150) NOT NULL UNIQUE,
+      company_name VARCHAR(150) NOT NULL,
+      email VARCHAR(150) UNIQUE NOT NULL,
+      phone VARCHAR(20) NOT NULL,
+      tin VARCHAR(100) UNIQUE,
+      address TEXT,
+      description TEXT,
+      district VARCHAR(100),
+      sector VARCHAR(100),
+      cell VARCHAR(100),
+      village VARCHAR(100),
+      company_type VARCHAR(50),
+      years_of_experience INTEGER DEFAULT 0,
+      number_of_employees INTEGER DEFAULT 0,
+      vehicles JSONB DEFAULT '[]'::jsonb,
+      certificates JSONB DEFAULT '[]'::jsonb,
+      status VARCHAR(50) DEFAULT 'pending',
+      is_active BOOLEAN DEFAULT true,
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
-    )
+    );
+    
+    CREATE INDEX IF NOT EXISTS waste_company_profiles_email_key ON waste_company_profiles (email);
+    CREATE INDEX IF NOT EXISTS waste_company_profiles_tin_key ON waste_company_profiles (tin);
   `);
+};
+
+// ─── Company Profile Functions ───────────────────────────────────────────────
+
+export const createCompanyProfile = async (companyData: Partial<WasteCompanyProfile>): Promise<WasteCompanyProfile> => {
+  const { company_name, email, phone, tin, address, description, district, sector, cell, village, company_type, years_of_experience, number_of_employees, vehicles, certificates, status, is_active } = companyData;
+  
+  const result = await pool.query(
+    `INSERT INTO waste_company_profiles (company_name, email, phone, tin, address, description, district, sector, cell, village, company_type, years_of_experience, number_of_employees, vehicles, certificates, status, is_active)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+     RETURNING *`,
+    [company_name, email, phone, tin, address, description, district, sector, cell, village, company_type, years_of_experience || 0, number_of_employees || 0, JSON.stringify(vehicles || []), JSON.stringify(certificates || []), status || "pending", is_active !== false]
+  );
+  
+  return result.rows[0];
+};
+
+export const getCompanyProfileById = async (id: number): Promise<WasteCompanyProfile | null> => {
+  const result = await pool.query(`SELECT * FROM waste_company_profiles WHERE id = $1`, [id]);
+  return result.rows[0] || null;
+};
+
+export const getCompanyProfileByEmail = async (email: string): Promise<WasteCompanyProfile | null> => {
+  const result = await pool.query(`SELECT * FROM waste_company_profiles WHERE email = $1`, [email]);
+  return result.rows[0] || null;
+};
+
+export const getCompanyProfileByTin = async (tin: string): Promise<WasteCompanyProfile | null> => {
+  const result = await pool.query(`SELECT * FROM waste_company_profiles WHERE tin = $1`, [tin]);
+  return result.rows[0] || null;
+};
+
+export const getAllCompanyProfiles = async (limit: number = 50, offset: number = 0): Promise<WasteCompanyProfile[]> => {
+  const result = await pool.query(`SELECT * FROM waste_company_profiles ORDER BY created_at DESC LIMIT $1 OFFSET $2`, [limit, offset]);
+  return result.rows;
+};
+
+export const getCompanyProfilesByStatus = async (status: string): Promise<WasteCompanyProfile[]> => {
+  const result = await pool.query(`SELECT * FROM waste_company_profiles WHERE status = $1 ORDER BY created_at DESC`, [status]);
+  return result.rows;
+};
+
+export const updateCompanyProfile = async (id: number, updateData: Partial<WasteCompanyProfile>): Promise<WasteCompanyProfile | null> => {
+  const fields: string[] = [];
+  const values: any[] = [id];
+  let paramCount = 2;
+
+  Object.entries(updateData).forEach(([key, value]) => {
+    if (key !== "id" && key !== "created_at") {
+      if (key === "vehicles" || key === "certificates") {
+        fields.push(`${key} = $${paramCount}`);
+        values.push(JSON.stringify(value));
+      } else {
+        fields.push(`${key} = $${paramCount}`);
+        values.push(value);
+      }
+      paramCount++;
+    }
+  });
+
+  if (fields.length === 0) return getCompanyProfileById(id);
+
+  fields.push(`updated_at = NOW()`);
+  const query = `UPDATE waste_company_profiles SET ${fields.join(", ")} WHERE id = $1 RETURNING *`;
+  
+  const result = await pool.query(query, values);
+  return result.rows[0] || null;
+};
+
+export const deleteCompanyProfile = async (id: number): Promise<boolean> => {
+  const result = await pool.query(`DELETE FROM waste_company_profiles WHERE id = $1`, [id]);
+  return (result.rowCount ?? 0) > 0;
+};
+
+export const searchCompanyProfiles = async (searchTerm: string): Promise<WasteCompanyProfile[]> => {
+  const query = `
+    SELECT * FROM waste_company_profiles 
+    WHERE company_name ILIKE $1 OR email ILIKE $1 OR district ILIKE $1 OR tin ILIKE $1
+    ORDER BY created_at DESC
+  `;
+  const result = await pool.query(query, [`%${searchTerm}%`]);
+  return result.rows;
+};
+
+export const filterCompanyProfiles = async (filters: Partial<WasteCompanyProfile>): Promise<WasteCompanyProfile[]> => {
+  const conditions: string[] = [];
+  const values: any[] = [];
+  let paramCount = 1;
+
+  if (filters.status) {
+    conditions.push(`status = $${paramCount}`);
+    values.push(filters.status);
+    paramCount++;
+  }
+
+  if (filters.is_active !== undefined) {
+    conditions.push(`is_active = $${paramCount}`);
+    values.push(filters.is_active);
+    paramCount++;
+  }
+
+  if (filters.company_type) {
+    conditions.push(`company_type ILIKE $${paramCount}`);
+    values.push(`%${filters.company_type}%`);
+    paramCount++;
+  }
+
+  if (filters.district) {
+    conditions.push(`district ILIKE $${paramCount}`);
+    values.push(`%${filters.district}%`);
+    paramCount++;
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const result = await pool.query(`SELECT * FROM waste_company_profiles ${whereClause} ORDER BY created_at DESC`, values);
+  return result.rows;
 };
 
 // ─── Initialize Tables ───────────────────────────────────────────────────────
@@ -140,7 +298,7 @@ export const initWasteCollectorTables = async () => {
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW(),
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY (company_id) REFERENCES waste_companies(id) ON DELETE CASCADE
+      FOREIGN KEY (company_id) REFERENCES waste_company_profiles(id) ON DELETE CASCADE
     )
   `);
 

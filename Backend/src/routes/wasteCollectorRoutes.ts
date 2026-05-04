@@ -32,6 +32,12 @@ import {
   getManagerTeam,
   updateManager,
   getCollectorsByRoleController,
+  getAllCollectorsData,
+  getCollectorData,
+  getCollectorsFiltered,
+  createCollectorData,
+  updateCollectorData,
+  deleteCollectorData,
 } from "../controllers/wasteCollectorController";
 import { authenticate, authorizeAdmin } from "../middleware/auth";
 
@@ -968,5 +974,169 @@ router.get("/managers/:manager_id/team", authenticate, getManagerTeam);
  *         description: List of collectors by role
  */
 router.get("/company/:company_id/by-role", authenticate, getCollectorsByRoleController);
+
+// ─── Data-Driven Database API (Full Database Access) ──────────────────────
+
+/**
+ * @swagger
+ * /api/waste-collectors/data/all:
+ *   get:
+ *     summary: Get all collectors with full database fields
+ *     tags: [Data API]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: company_id
+ *         in: query
+ *         schema:
+ *           type: number
+ *       - name: status
+ *         in: query
+ *         schema:
+ *           type: string
+ *       - name: role
+ *         in: query
+ *         schema:
+ *           type: string
+ *       - name: limit
+ *         in: query
+ *         schema:
+ *           type: number
+ *       - name: offset
+ *         in: query
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: List of all collectors with database fields
+ */
+router.get("/data/all", authenticate, getAllCollectorsData);
+
+/**
+ * @swagger
+ * /api/waste-collectors/data/{id}:
+ *   get:
+ *     summary: Get single collector with all database fields
+ *     tags: [Data API]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: Complete collector record
+ *       404:
+ *         description: Collector not found
+ */
+router.get("/data/:id", authenticate, getCollectorData);
+
+/**
+ * @swagger
+ * /api/waste-collectors/data/filter:
+ *   get:
+ *     summary: Filter collectors by database fields
+ *     tags: [Data API]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: company_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: number
+ *       - name: status
+ *         in: query
+ *         schema:
+ *           type: string
+ *       - name: role
+ *         in: query
+ *         schema:
+ *           type: string
+ *       - name: zone_id
+ *         in: query
+ *         schema:
+ *           type: number
+ *       - name: employee_id
+ *         in: query
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Filtered collector list
+ */
+router.get("/data/filter", authenticate, getCollectorsFiltered);
+
+/**
+ * @swagger
+ * /api/waste-collectors/data/create:
+ *   post:
+ *     summary: Create new collector with database fields
+ *     tags: [Data API]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *               - company_id
+ *               - employee_id
+ *               - full_name
+ *               - email
+ *               - phone
+ *               - hire_date
+ *               - contract_type
+ *     responses:
+ *       201:
+ *         description: Collector created
+ */
+router.post("/data/create", authenticate, createCollectorData);
+
+/**
+ * @swagger
+ * /api/waste-collectors/data/{id}:
+ *   put:
+ *     summary: Update collector with database fields
+ *     tags: [Data API]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: Collector updated
+ */
+router.put("/data/:id", authenticate, updateCollectorData);
+
+/**
+ * @swagger
+ * /api/waste-collectors/data/{id}:
+ *   delete:
+ *     summary: Delete collector and related data
+ *     tags: [Data API]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: Collector deleted
+ */
+router.delete("/data/:id", authenticate, deleteCollectorData);
 
 export default router;
