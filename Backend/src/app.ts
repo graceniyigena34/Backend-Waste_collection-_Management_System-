@@ -5,7 +5,7 @@ import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
 
 // Routes
-import authRoutes from "./routes/authroutes";
+import authRoutes from "./routes/authRoutes";
 import householdRoutes from "./routes/householdRoutes";
 import scheduleRoutes from "./routes/scheduleRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
