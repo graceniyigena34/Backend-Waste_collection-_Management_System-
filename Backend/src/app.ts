@@ -30,6 +30,15 @@ const app: Application = express();
 app.use(cors());
 app.use(express.json());
 
+// Health check for deployment platforms and uptime monitoring
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+    service: "backend",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Swagger docs
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
