@@ -98,8 +98,9 @@ export const getCompany = async (req: AuthRequest, res: Response): Promise<void>
 export const getCompanyByEmail = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { email } = req.params;
+    const emailStr = Array.isArray(email) ? email[0] : email;
     
-    const company = await getCompanyProfileByEmail(email);
+    const company = await getCompanyProfileByEmail(emailStr);
     
     if (!company) {
       res.status(404).json({ message: "Company profile not found" });
@@ -119,8 +120,9 @@ export const getCompanyByEmail = async (req: AuthRequest, res: Response): Promis
 export const getCompanyByTin = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { tin } = req.params;
+    const tinStr = Array.isArray(tin) ? tin[0] : tin;
     
-    const company = await getCompanyProfileByTin(tin);
+    const company = await getCompanyProfileByTin(tinStr);
     
     if (!company) {
       res.status(404).json({ message: "Company profile not found" });
@@ -156,14 +158,15 @@ export const getAllCompanies = async (req: AuthRequest, res: Response): Promise<
 export const getCompaniesByStatus = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { status } = req.params;
+    const statusStr = Array.isArray(status) ? status[0] : status;
     
     const validStatuses = ["pending", "approved", "rejected", "suspended"];
-    if (!validStatuses.includes(status)) {
+    if (!validStatuses.includes(statusStr)) {
       res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(", ")}` });
       return;
     }
     
-    const companies = await getCompanyProfilesByStatus(status);
+    const companies = await getCompanyProfilesByStatus(statusStr);
     
     res.json({ status, count: companies.length, data: companies });
   } catch (error) {
