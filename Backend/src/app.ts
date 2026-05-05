@@ -39,6 +39,14 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+// Root route: provide basic info and links for browsers visiting '/'
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    message: "Waste Collection Management Backend",
+    docs: "/api-docs",
+    health: "/api/health",
+  });
+});
 // Swagger docs
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
