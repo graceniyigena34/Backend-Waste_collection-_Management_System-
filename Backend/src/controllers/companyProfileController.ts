@@ -19,7 +19,38 @@ import {
  */
 export const createCompany = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { company_name, email, phone, tin, address, description, district, sector, cell, village, company_type, years_of_experience, number_of_employees, vehicles, certificates } = req.body;
+    const {
+      company_name,
+      email,
+      phone,
+      owner_name,
+      owner_email,
+      owner_phone,
+      tin,
+      address,
+      description,
+      district,
+      sector,
+      cell,
+      village,
+      company_logo,
+      company_images,
+      company_type,
+      years_of_experience,
+      number_of_employees,
+      manager_name,
+      manager_email,
+      manager_phone,
+      manager_position,
+      manager_national_id,
+      drivers,
+      vehicles,
+      certificates,
+      rdb_certificates,
+      tax_certificates,
+      service_areas,
+      notes,
+    } = req.body;
 
     // Validation
     if (!company_name || !email || !phone) {
@@ -47,6 +78,9 @@ export const createCompany = async (req: AuthRequest, res: Response): Promise<vo
       company_name,
       email,
       phone,
+      owner_name,
+      owner_email,
+      owner_phone,
       tin,
       address,
       description,
@@ -54,11 +88,23 @@ export const createCompany = async (req: AuthRequest, res: Response): Promise<vo
       sector,
       cell,
       village,
+      company_logo,
+      company_images: company_images || [],
       company_type,
       years_of_experience: years_of_experience || 0,
       number_of_employees: number_of_employees || 0,
+      manager_name,
+      manager_email,
+      manager_phone,
+      manager_position,
+      manager_national_id,
+      drivers: drivers || [],
       vehicles: vehicles || [],
       certificates: certificates || [],
+      rdb_certificates: rdb_certificates || [],
+      tax_certificates: tax_certificates || [],
+      service_areas: service_areas || [],
+      notes,
       status: "pending",
       is_active: true,
     };
@@ -293,6 +339,7 @@ export const filterCompanies = async (req: AuthRequest, res: Response): Promise<
 export const approveCompany = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    const { review_notes } = req.body;
 
     if (req.user?.role !== "admin") {
       res.status(403).json({ message: "Only admins can approve companies" });
@@ -305,7 +352,12 @@ export const approveCompany = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
-    const updatedCompany = await updateCompanyProfile(Number(id), { status: "approved" });
+    const updatedCompany = await updateCompanyProfile(Number(id), {
+      status: "approved",
+      review_notes: review_notes || null,
+      reviewed_at: new Date(),
+      reviewed_by: req.user?.id,
+    });
     
     res.json({ message: "Company approved successfully", company: updatedCompany });
   } catch (error) {
@@ -333,7 +385,12 @@ export const rejectCompany = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const updatedCompany = await updateCompanyProfile(Number(id), { status: "rejected" });
+    const updatedCompany = await updateCompanyProfile(Number(id), {
+      status: "rejected",
+      review_notes: reason || null,
+      reviewed_at: new Date(),
+      reviewed_by: req.user?.id,
+    });
     
     res.json({ message: "Company rejected successfully", reason, company: updatedCompany });
   } catch (error) {

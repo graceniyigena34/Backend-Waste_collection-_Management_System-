@@ -100,6 +100,9 @@ export interface WasteCompanyProfile {
   company_name: string;
   email: string;
   phone: string;
+  owner_name?: string;
+  owner_email?: string;
+  owner_phone?: string;
   tin?: string;
   address?: string;
   description?: string;
@@ -107,12 +110,27 @@ export interface WasteCompanyProfile {
   sector?: string;
   cell?: string;
   village?: string;
+  company_logo?: string;
+  company_images?: Array<any>;
   company_type?: string;
   years_of_experience?: number;
   number_of_employees?: number;
+  manager_name?: string;
+  manager_email?: string;
+  manager_phone?: string;
+  manager_position?: string;
+  manager_national_id?: string;
+  drivers?: Array<any>;
   vehicles?: Array<any>;
   certificates?: Array<any>;
+  rdb_certificates?: Array<any>;
+  tax_certificates?: Array<any>;
+  service_areas?: Array<any>;
+  notes?: string;
   status: "pending" | "approved" | "rejected" | "suspended";
+  review_notes?: string;
+  reviewed_at?: Date;
+  reviewed_by?: number;
   is_active: boolean;
   created_at?: Date;
   updated_at?: Date;
@@ -127,6 +145,9 @@ export const initWasteCompaniesTable = async () => {
       company_name VARCHAR(150) NOT NULL,
       email VARCHAR(150) UNIQUE NOT NULL,
       phone VARCHAR(20) NOT NULL,
+      owner_name VARCHAR(150),
+      owner_email VARCHAR(150),
+      owner_phone VARCHAR(20),
       tin VARCHAR(100) UNIQUE,
       address TEXT,
       description TEXT,
@@ -134,16 +155,50 @@ export const initWasteCompaniesTable = async () => {
       sector VARCHAR(100),
       cell VARCHAR(100),
       village VARCHAR(100),
+      company_logo TEXT,
+      company_images JSONB DEFAULT '[]'::jsonb,
       company_type VARCHAR(50),
       years_of_experience INTEGER DEFAULT 0,
       number_of_employees INTEGER DEFAULT 0,
+      manager_name VARCHAR(150),
+      manager_email VARCHAR(150),
+      manager_phone VARCHAR(20),
+      manager_position VARCHAR(100),
+      manager_national_id VARCHAR(50),
+      drivers JSONB DEFAULT '[]'::jsonb,
       vehicles JSONB DEFAULT '[]'::jsonb,
       certificates JSONB DEFAULT '[]'::jsonb,
+      rdb_certificates JSONB DEFAULT '[]'::jsonb,
+      tax_certificates JSONB DEFAULT '[]'::jsonb,
+      service_areas JSONB DEFAULT '[]'::jsonb,
+      notes TEXT,
       status VARCHAR(50) DEFAULT 'pending',
+      review_notes TEXT,
+      reviewed_at TIMESTAMP,
+      reviewed_by INTEGER,
       is_active BOOLEAN DEFAULT true,
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     );
+
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS owner_name VARCHAR(150);
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS owner_email VARCHAR(150);
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS owner_phone VARCHAR(20);
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS company_logo TEXT;
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS company_images JSONB DEFAULT '[]'::jsonb;
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS manager_name VARCHAR(150);
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS manager_email VARCHAR(150);
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS manager_phone VARCHAR(20);
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS manager_position VARCHAR(100);
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS manager_national_id VARCHAR(50);
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS drivers JSONB DEFAULT '[]'::jsonb;
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS rdb_certificates JSONB DEFAULT '[]'::jsonb;
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS tax_certificates JSONB DEFAULT '[]'::jsonb;
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS service_areas JSONB DEFAULT '[]'::jsonb;
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS notes TEXT;
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS review_notes TEXT;
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP;
+    ALTER TABLE waste_company_profiles ADD COLUMN IF NOT EXISTS reviewed_by INTEGER;
     
     CREATE INDEX IF NOT EXISTS waste_company_profiles_email_key ON waste_company_profiles (email);
     CREATE INDEX IF NOT EXISTS waste_company_profiles_tin_key ON waste_company_profiles (tin);
@@ -153,13 +208,49 @@ export const initWasteCompaniesTable = async () => {
 // ─── Company Profile Functions ───────────────────────────────────────────────
 
 export const createCompanyProfile = async (companyData: Partial<WasteCompanyProfile>): Promise<WasteCompanyProfile> => {
-  const { company_name, email, phone, tin, address, description, district, sector, cell, village, company_type, years_of_experience, number_of_employees, vehicles, certificates, status, is_active } = companyData;
+  const {
+    company_name,
+    email,
+    phone,
+    owner_name,
+    owner_email,
+    owner_phone,
+    tin,
+    address,
+    description,
+    district,
+    sector,
+    cell,
+    village,
+    company_logo,
+    company_images,
+    company_type,
+    years_of_experience,
+    number_of_employees,
+    manager_name,
+    manager_email,
+    manager_phone,
+    manager_position,
+    manager_national_id,
+    drivers,
+    vehicles,
+    certificates,
+    rdb_certificates,
+    tax_certificates,
+    service_areas,
+    notes,
+    status,
+    review_notes,
+    reviewed_at,
+    reviewed_by,
+    is_active,
+  } = companyData;
   
   const result = await pool.query(
-    `INSERT INTO waste_company_profiles (company_name, email, phone, tin, address, description, district, sector, cell, village, company_type, years_of_experience, number_of_employees, vehicles, certificates, status, is_active)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+    `INSERT INTO waste_company_profiles (company_name, email, phone, owner_name, owner_email, owner_phone, tin, address, description, district, sector, cell, village, company_logo, company_images, company_type, years_of_experience, number_of_employees, manager_name, manager_email, manager_phone, manager_position, manager_national_id, drivers, vehicles, certificates, rdb_certificates, tax_certificates, service_areas, notes, status, review_notes, reviewed_at, reviewed_by, is_active)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35)
      RETURNING *`,
-    [company_name, email, phone, tin, address, description, district, sector, cell, village, company_type, years_of_experience || 0, number_of_employees || 0, JSON.stringify(vehicles || []), JSON.stringify(certificates || []), status || "pending", is_active !== false]
+    [company_name, email, phone, owner_name, owner_email, owner_phone, tin, address, description, district, sector, cell, village, company_logo, JSON.stringify(company_images || []), company_type, years_of_experience || 0, number_of_employees || 0, manager_name, manager_email, manager_phone, manager_position, manager_national_id, JSON.stringify(drivers || []), JSON.stringify(vehicles || []), JSON.stringify(certificates || []), JSON.stringify(rdb_certificates || []), JSON.stringify(tax_certificates || []), JSON.stringify(service_areas || []), notes, status || "pending", review_notes, reviewed_at, reviewed_by, is_active !== false]
   );
   
   return result.rows[0];
