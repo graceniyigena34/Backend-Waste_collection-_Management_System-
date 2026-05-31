@@ -1,4 +1,5 @@
 import { Response } from "express";
+import bcrypt from "bcryptjs";
 import { AuthRequest } from "../middleware/auth";
 import {
   createCompanyProfile,
@@ -13,6 +14,7 @@ import {
   filterCompanyProfiles,
   WasteCompanyProfile,
 } from "../models/wasteCollectorModel";
+import { createUser, deleteUser, findUserByEmail } from "../models/userModel";
 
 /**
  * Create new company profile
@@ -113,6 +115,124 @@ export const createCompany = async (req: AuthRequest, res: Response): Promise<vo
     res.status(201).json({ message: "Company profile created successfully", company: newCompany });
   } catch (error) {
     console.error("Error creating company profile:", error);
+    res.status(500).json({ message: "Internal server error", error: (error as Error).message });
+  }
+};
+
+/**
+ * Admin creates a company account and profile in one action.
+ * The email is used as the company username for signing in.
+ */
+export const createCompanyWithAccess = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (req.user?.role !== "admin") {
+      res.status(403).json({ message: "Only admins can create company accounts" });
+      return;
+    }
+
+    const company_name = String(req.body.company_name || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const phone = String(req.body.phone || "").trim();
+    const password = String(req.body.password || "").trim();
+    const confirm_password = String(req.body.confirm_password || "").trim();
+
+    if (!company_name || !email || !phone || !password || !confirm_password) {
+      res.status(400).json({ message: "company_name, email, phone, password, and confirm_password are required" });
+      return;
+    }
+
+    if (password !== confirm_password) {
+      res.status(400).json({ message: "Passwords do not match" });
+      return;
+    }
+
+    if (password.length < 6) {
+      res.status(400).json({ message: "Password must be at least 6 characters" });
+      return;
+    }
+
+    const existingUser = await findUserByEmail(email);
+    if (existingUser) {
+      res.status(409).json({ message: "Email already registered" });
+      return;
+    }
+
+    const existingCompany = await getCompanyProfileByEmail(email);
+    if (existingCompany) {
+      res.status(409).json({ message: "Company email already registered" });
+      return;
+    }
+
+    const tin = req.body.tin ? String(req.body.tin).trim() : "";
+    if (tin) {
+      const existingTin = await getCompanyProfileByTin(tin);
+      if (existingTin) {
+        res.status(409).json({ message: "TIN already registered" });
+        return;
+      }
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await createUser(company_name, email, phone, "waste_collector", hashedPassword);
+
+    try {
+      const companyData: Partial<WasteCompanyProfile> = {
+        company_name,
+        email,
+        phone,
+        owner_name: req.body.owner_name,
+        owner_email: req.body.owner_email,
+        owner_phone: req.body.owner_phone,
+        tin: tin || undefined,
+        address: req.body.address,
+        description: req.body.description,
+        district: req.body.district,
+        sector: req.body.sector,
+        cell: req.body.cell,
+        village: req.body.village,
+        company_logo: req.body.company_logo,
+        company_images: req.body.company_images || [],
+        company_type: req.body.company_type,
+        years_of_experience: req.body.years_of_experience || 0,
+        number_of_employees: req.body.number_of_employees || 0,
+        manager_name: req.body.manager_name,
+        manager_email: req.body.manager_email,
+        manager_phone: req.body.manager_phone,
+        manager_position: req.body.manager_position,
+        manager_national_id: req.body.manager_national_id,
+        drivers: req.body.drivers || [],
+        vehicles: req.body.vehicles || [],
+        certificates: req.body.certificates || [],
+        rdb_certificates: req.body.rdb_certificates || [],
+        tax_certificates: req.body.tax_certificates || [],
+        service_areas: req.body.service_areas || [],
+        notes: req.body.notes,
+        status: "pending",
+        is_active: true,
+      };
+
+      const company = await createCompanyProfile(companyData);
+
+      res.status(201).json({
+        message: "Company account created successfully",
+        credentials: {
+          username: email,
+          password,
+        },
+        user: {
+          id: user.id,
+          full_name: user.full_name,
+          email: user.email,
+          role: user.role,
+        },
+        company,
+      });
+    } catch (error) {
+      await deleteUser(user.id).catch(() => undefined);
+      throw error;
+    }
+  } catch (error) {
+    console.error("Error creating company account:", error);
     res.status(500).json({ message: "Internal server error", error: (error as Error).message });
   }
 };
