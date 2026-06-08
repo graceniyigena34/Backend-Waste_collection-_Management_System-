@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth";
-import { listConversations, listChatMessages, sendChatMessage, editChatMessage, removeChatMessage } from "../controllers/chatController";
+import { listConversations, listChatMessages, sendChatMessage, replyToCitizen, editChatMessage, removeChatMessage } from "../controllers/chatController";
 
 const router = Router();
 
@@ -86,6 +86,54 @@ router.get("/company/:companyId/conversations", authenticate, listConversations)
  *         description: Company not found
  */
 router.get("/company/:companyId", authenticate, listChatMessages);
+
+/**
+ * @swagger
+ * /api/chat/company/{companyId}/reply/{citizenUserId}:
+ *   post:
+ *     summary: Company replies to a citizen's message (company/admin only)
+ *     tags: [Chat]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: citizenUserId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID of the citizen being replied to
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [message]
+ *             properties:
+ *               message:
+ *                 type: string
+ *                 example: Your next collection is on Friday morning.
+ *               sender_name:
+ *                 type: string
+ *                 example: EcoClean Support
+ *     responses:
+ *       201:
+ *         description: Reply sent
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (citizens cannot use this endpoint)
+ *       404:
+ *         description: Company not found
+ */
+router.post("/company/:companyId/reply/:citizenUserId", authenticate, replyToCitizen);
 
 /**
  * @swagger

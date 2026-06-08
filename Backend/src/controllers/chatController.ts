@@ -132,6 +132,48 @@ export const sendChatMessage = async (req: AuthRequest, res: Response): Promise<
   res.status(201).json({ message: "Message sent", chat });
 };
 
+// POST /api/chat/company/:companyId/reply/:citizenUserId — company/admin replies to a citizen
+export const replyToCitizen = async (req: AuthRequest, res: Response): Promise<void> => {
+  const companyId = toNumber(req.params.companyId);
+  const citizenUserId = toNumber(req.params.citizenUserId);
+  const userId = req.user!.id;
+  const role = req.user!.role;
+  const message = typeof req.body.message === "string" ? req.body.message.trim() : "";
+  const senderName = typeof req.body.sender_name === "string" ? req.body.sender_name.trim() : undefined;
+
+  if (!isCompanyRole(role)) {
+    res.status(403).json({ message: "Only company or admin users can reply" });
+    return;
+  }
+
+  if (!companyId || !citizenUserId) {
+    res.status(400).json({ message: "companyId and citizenUserId must be valid numbers" });
+    return;
+  }
+
+  if (!message) {
+    res.status(400).json({ message: "message is required" });
+    return;
+  }
+
+  const company = await getCompanyProfileById(companyId);
+  if (!company) {
+    res.status(404).json({ message: "Company not found" });
+    return;
+  }
+
+  const chat = await insertChatMessage({
+    company_id: companyId,
+    user_id: userId,
+    citizen_user_id: citizenUserId,
+    sender_role: "company",
+    sender_name: senderName,
+    message,
+  });
+
+  res.status(201).json({ message: "Reply sent", chat });
+};
+
 export const editChatMessage = async (req: AuthRequest, res: Response): Promise<void> => {
   const companyId = toNumber(req.params.companyId);
   const messageId = toNumber(req.params.messageId);
