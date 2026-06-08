@@ -50,6 +50,15 @@ export const getChatMessages = async (companyId: number, citizenUserId: number):
   return result.rows as ChatMessage[];
 };
 
+// Returns every message belonging to a company across all citizen conversations
+export const getAllCompanyMessages = async (companyId: number): Promise<ChatMessage[]> => {
+  const result = await pool.query(
+    `SELECT * FROM chat_messages WHERE company_id = $1 ORDER BY created_at ASC`,
+    [companyId]
+  );
+  return result.rows as ChatMessage[];
+};
+
 // Returns a summary of all citizen conversations for a company
 export const getCompanyConversations = async (companyId: number): Promise<ConversationSummary[]> => {
   const result = await pool.query(

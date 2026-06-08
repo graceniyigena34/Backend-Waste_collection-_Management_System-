@@ -2,6 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../middleware/auth";
 import {
   getChatMessages,
+  getAllCompanyMessages,
   getCompanyConversations,
   insertChatMessage,
   updateChatMessage,
@@ -60,19 +61,22 @@ export const listChatMessages = async (req: AuthRequest, res: Response): Promise
     return;
   }
 
-  let citizenUserId: number;
   if (isCompanyRole(role)) {
     const cid = toNumber(req.query.citizen_user_id);
-    if (!cid) {
-      res.status(400).json({ message: "citizen_user_id query parameter is required for company/admin users" });
-      return;
+    if (cid) {
+      // Specific citizen conversation requested
+      const messages = await getChatMessages(companyId, cid);
+      res.json({ messages });
+    } else {
+      // No filter — return every message for this company
+      const messages = await getAllCompanyMessages(companyId);
+      res.json({ messages });
     }
-    citizenUserId = cid;
-  } else {
-    citizenUserId = userId;
+    return;
   }
 
-  const messages = await getChatMessages(companyId, citizenUserId);
+  // Citizen: returns only their own conversation
+  const messages = await getChatMessages(companyId, userId);
   res.json({ messages });
 };
 
