@@ -75,12 +75,17 @@ export const getCompanyConversations = async (companyId: number): Promise<Conver
 };
 
 export const insertChatMessage = async (data: Omit<ChatMessage, "id" | "created_at">): Promise<ChatMessage> => {
-  const result = await pool.query(
-    `INSERT INTO chat_messages (company_id, user_id, citizen_user_id, sender_role, sender_name, message)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-    [data.company_id, data.user_id, data.citizen_user_id, data.sender_role, data.sender_name ?? null, data.message]
-  );
-  return result.rows[0] as ChatMessage;
+  try {
+    const result = await pool.query(
+      `INSERT INTO chat_messages (company_id, user_id, citizen_user_id, sender_role, sender_name, message)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [data.company_id, data.user_id, data.citizen_user_id, data.sender_role, data.sender_name ?? null, data.message]
+    );
+    return result.rows[0] as ChatMessage;
+  } catch (err) {
+    console.error("[insertChatMessage] DB error:", err);
+    throw err;
+  }
 };
 
 export const updateChatMessage = async (messageId: number, userId: number, message: string): Promise<ChatMessage | null> => {

@@ -1,4 +1,4 @@
-import express, { Application } from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import swaggerUi from "swagger-ui-express";
@@ -82,5 +82,12 @@ const initDB = async () => {
 };
 
 initDB().catch(console.error);
+
+// Global error handler — must be registered after all routes
+// Returns a JSON error body instead of an HTML page so the frontend can display it
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("[Global Error]", err.message, err.stack);
+  res.status(500).json({ message: err.message || "Internal server error" });
+});
 
 export default app;
