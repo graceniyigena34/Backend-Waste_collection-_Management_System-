@@ -40,3 +40,19 @@ export const insertChatMessage = async (data: Omit<ChatMessage, "id" | "created_
   );
   return result.rows[0] as ChatMessage;
 };
+
+export const updateChatMessage = async (messageId: number, userId: number, message: string): Promise<ChatMessage | null> => {
+  const result = await pool.query(
+    `UPDATE chat_messages SET message = $1 WHERE id = $2 AND user_id = $3 RETURNING *`,
+    [message, messageId, userId]
+  );
+  return result.rows[0] as ChatMessage ?? null;
+};
+
+export const deleteChatMessage = async (messageId: number, userId: number): Promise<boolean> => {
+  const result = await pool.query(
+    `DELETE FROM chat_messages WHERE id = $1 AND user_id = $2`,
+    [messageId, userId]
+  );
+  return (result.rowCount ?? 0) > 0;
+};
