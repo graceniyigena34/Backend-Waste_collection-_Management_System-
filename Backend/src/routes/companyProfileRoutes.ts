@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authenticate, authorizeAdmin } from "../middleware/auth";
 import {
   createCompany,
+  createCompanyWithAccess,
   getCompany,
   getCompanyByEmail,
   getCompanyByTin,
@@ -79,6 +80,22 @@ const router = Router();
  *         description: Email or TIN already registered
  */
 router.post("/", authenticate, createCompany);
+
+/**
+ * @swagger
+ * /api/companies/admin-create:
+ *   post:
+ *     summary: Create a company account and profile (Admin only)
+ *     tags: [Company Profiles - Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Company account created successfully
+ *       403:
+ *         description: Only admins can create company accounts
+ */
+router.post("/admin-create", authenticate, authorizeAdmin, createCompanyWithAccess);
 
 // ─── Get All Companies ──────────────────────────────────────────────────────
 

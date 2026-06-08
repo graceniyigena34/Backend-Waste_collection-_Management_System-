@@ -8,6 +8,7 @@ import { swaggerSpec } from "./config/swagger";
 import authRoutes from "./routes/authRoutes";
 import householdRoutes from "./routes/householdRoutes";
 import scheduleRoutes from "./routes/scheduleRoutes";
+import companyScheduleRoutes from "./routes/companyScheduleRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
 import complaintRoutes from "./routes/complaintRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
@@ -22,6 +23,7 @@ import { initPaymentsTable } from "./models/paymentModel";
 import { initComplaintsTable } from "./models/complaintModel";
 import { initNotificationsTable } from "./models/notificationModel";
 import { initWasteCompaniesTable, initWasteCollectorTables } from "./models/wasteCollectorModel";
+import { initCompanySchedulesTable } from "./models/companyScheduleModel";
 
 dotenv.config();
 
@@ -54,6 +56,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authRoutes);
 app.use("/api/households", householdRoutes);
 app.use("/api/schedules", scheduleRoutes);
+app.use("/api/company-schedules", companyScheduleRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/notifications", notificationRoutes);
@@ -70,6 +73,7 @@ const initDB = async () => {
   await initNotificationsTable();
   await initWasteCompaniesTable();
   await initWasteCollectorTables();
+  await initCompanySchedulesTable();
   console.log("✅ All database tables initialized");
 };
 
