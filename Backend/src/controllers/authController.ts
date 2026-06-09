@@ -8,9 +8,13 @@ import {
   updateUser,
   deleteUser,
   getAllUsers,
+  createPasswordResetToken,
+  verifyPasswordResetToken,
+  invalidatePasswordResetToken,
   UserRole,
 } from "../models/userModel";
 import { AuthRequest } from "../middleware/auth";
+import { sendPasswordResetEmail } from "../services/emailService";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error("JWT_SECRET environment variable is not set");
@@ -157,7 +161,7 @@ export const deleteAccount = async (req: AuthRequest, res: Response): Promise<vo
 };
 
 // READ ALL — Admin only
-export const listUsers = async (req: AuthRequest, res: Response): Promise<void> => {
+export const listUsers = async (_req: AuthRequest, res: Response): Promise<void> => {
   const users = await getAllUsers();
   res.json(users);
 };
@@ -189,4 +193,67 @@ export const deleteUserById = async (req: AuthRequest, res: Response): Promise<v
     return;
   }
   res.json({ message: "User deleted successfully" });
+};
+
+// ── Password reset (unauthenticated) ─────────────────────────────────────────
+
+// POST /api/auth/forgot-password
+export const forgotPassword = async (req: AuthRequest, res: Response): Promise<void> => {
+  const email = sanitizeString(req.body.email).toLowerCase();
+  if (!email) {
+    res.status(400).json({ message: "Email is required" });
+    return;
+  }
+
+  const user = await findUserByEmail(email);
+  // Always respond the same way to prevent email enumeration
+  if (!user) {
+    res.json({ message: "If that email is registered, a reset link has been sent." });
+    return;
+  }
+
+  const token = await createPasswordResetToken(user.id);
+  const frontendBase = process.env.FRONTEND_URL ?? "http://localhost:3000";
+  const resetUrl = `${frontendBase}/reset-password?token=${token}`;
+
+  try {
+    await sendPasswordResetEmail(user.email, resetUrl, user.full_name);
+  } catch (emailErr) {
+    console.error("[forgotPassword] Failed to send email:", emailErr);
+    // Still respond with success — don't expose email delivery failures
+  }
+
+  res.json({ message: "If that email is registered, a reset link has been sent." });
+};
+
+// POST /api/auth/reset-password
+export const resetPassword = async (req: AuthRequest, res: Response): Promise<void> => {
+  const token = sanitizeString(req.body.token);
+  const newPassword = sanitizeString(req.body.new_password);
+  const confirmPassword = sanitizeString(req.body.confirm_password);
+
+  if (!token || !newPassword || !confirmPassword) {
+    res.status(400).json({ message: "token, new_password and confirm_password are required" });
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    res.status(400).json({ message: "Passwords do not match" });
+    return;
+  }
+  if (newPassword.length < 6) {
+    res.status(400).json({ message: "Password must be at least 6 characters" });
+    return;
+  }
+
+  const userId = await verifyPasswordResetToken(token);
+  if (!userId) {
+    res.status(400).json({ message: "Reset link is invalid or has expired. Please request a new one." });
+    return;
+  }
+
+  const hashed = await bcrypt.hash(newPassword, 10);
+  await updateUser(userId, { password: hashed });
+  await invalidatePasswordResetToken(token);
+
+  res.json({ message: "Password reset successfully. You can now sign in with your new password." });
 };
