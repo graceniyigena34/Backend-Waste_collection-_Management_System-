@@ -8,7 +8,8 @@ import {
   updateChatMessage,
   deleteChatMessage,
 } from "../models/chatModel";
-import { getCompanyProfileById } from "../models/wasteCollectorModel";
+import { getCompanyProfileById, getUserIdByCompanyId } from "../models/wasteCollectorModel";
+import { createNotification } from "../models/notificationModel";
 
 const toNumber = (v: unknown): number | null => {
   const n = Number(v);
@@ -129,6 +130,22 @@ export const sendChatMessage = async (req: AuthRequest, res: Response): Promise<
     message,
   });
 
+  // Notify the company when a citizen sends a message (fire-and-forget)
+  if (senderRole === "citizen") {
+    getUserIdByCompanyId(companyId)
+      .then((companyUserId) => {
+        if (companyUserId) {
+          return createNotification({
+            user_id: companyUserId,
+            title: "New Message",
+            message: `You have a new message from ${senderName || "a citizen"}.`,
+            type: "info",
+          });
+        }
+      })
+      .catch(() => {});
+  }
+
   res.status(201).json({ message: "Message sent", chat });
 };
 
@@ -170,6 +187,14 @@ export const replyToCitizen = async (req: AuthRequest, res: Response): Promise<v
     sender_name: senderName,
     message,
   });
+
+  // Notify the citizen about the company's reply (fire-and-forget)
+  createNotification({
+    user_id: citizenUserId,
+    title: "New Message",
+    message: `You have a new message from ${company.company_name}.`,
+    type: "info",
+  }).catch(() => {});
 
   res.status(201).json({ message: "Reply sent", chat });
 };

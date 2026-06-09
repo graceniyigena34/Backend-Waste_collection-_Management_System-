@@ -863,3 +863,27 @@ export const getCollectorsByRole = async (company_id: number, role: CollectorRol
   );
   return result.rows;
 };
+
+export const getUserIdByCompanyId = async (companyId: number): Promise<number | null> => {
+  const result = await pool.query(
+    `SELECT u.id FROM users u
+     JOIN waste_company_profiles wcp ON u.email = wcp.email
+     WHERE wcp.id = $1 AND u.role = 'waste_collector'
+     LIMIT 1`,
+    [companyId]
+  );
+  return result.rows[0]?.id ?? null;
+};
+
+export const getCompanyUserIdByDistrict = async (district: string): Promise<number | null> => {
+  const result = await pool.query(
+    `SELECT u.id FROM users u
+     JOIN waste_company_profiles wcp ON u.email = wcp.email
+     WHERE LOWER(COALESCE(wcp.district, '')) ILIKE LOWER($1)
+       AND u.role = 'waste_collector'
+       AND wcp.status = 'approved'
+     LIMIT 1`,
+    [district]
+  );
+  return result.rows[0]?.id ?? null;
+};

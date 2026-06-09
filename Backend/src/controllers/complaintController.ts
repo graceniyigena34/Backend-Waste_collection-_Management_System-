@@ -13,6 +13,8 @@ import {
   ComplaintPriority,
 } from "../models/complaintModel";
 import { getHouseholdByUserId } from "../models/householdModel";
+import { createNotification } from "../models/notificationModel";
+import { getCompanyUserIdByDistrict } from "../models/wasteCollectorModel";
 
 const VALID_STATUSES: ComplaintStatus[] = ["Pending", "In Progress", "Resolved"];
 const VALID_PRIORITIES: ComplaintPriority[] = ["Low", "Medium", "High", "Urgent"];
@@ -38,6 +40,22 @@ export const submitComplaint = async (req: AuthRequest, res: Response): Promise<
     description: description.trim(),
     priority: safePriority,
   });
+
+  // Notify the company serving this district (fire-and-forget)
+  if (household?.district) {
+    getCompanyUserIdByDistrict(household.district)
+      .then((companyUserId) => {
+        if (companyUserId) {
+          return createNotification({
+            user_id: companyUserId,
+            title: "New Complaint Received",
+            message: `A new complaint about "${issue_type}" was submitted in your district.`,
+            type: "warning",
+          });
+        }
+      })
+      .catch(() => {});
+  }
 
   res.status(201).json({ message: "Complaint submitted successfully", complaint });
 };
@@ -80,6 +98,12 @@ export const patchComplaintStatus = async (req: AuthRequest, res: Response): Pro
     res.status(404).json({ message: "Complaint not found" });
     return;
   }
+
+  // Notify the citizen whose complaint was updated (fire-and-forget)
+  const notifType = status === "Resolved" ? "success" : "info";
+  const notifMsg = `Your complaint "${updated.issue_type}" status changed to "${status}".${resolution_note ? ` Note: ${resolution_note}` : ""}`;
+  createNotification({ user_id: updated.user_id, title: "Complaint Status Updated", message: notifMsg, type: notifType }).catch(() => {});
+
   res.json({ message: "Complaint updated", complaint: updated });
 };
 
