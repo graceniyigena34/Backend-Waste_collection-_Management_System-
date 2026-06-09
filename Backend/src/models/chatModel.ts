@@ -13,6 +13,7 @@ export interface ChatMessage {
 
 export interface ConversationSummary {
   citizen_user_id: number;
+  citizen_name: string;
   last_message: string;
   last_at: string;
 }
@@ -59,16 +60,25 @@ export const getAllCompanyMessages = async (companyId: number): Promise<ChatMess
   return result.rows as ChatMessage[];
 };
 
-// Returns a summary of all citizen conversations for a company
+// Returns a summary of all citizen conversations for a company, ordered by most recent
 export const getCompanyConversations = async (companyId: number): Promise<ConversationSummary[]> => {
   const result = await pool.query(
-    `SELECT DISTINCT ON (citizen_user_id)
-       citizen_user_id,
-       message AS last_message,
-       created_at AS last_at
-     FROM chat_messages
-     WHERE company_id = $1 AND citizen_user_id IS NOT NULL
-     ORDER BY citizen_user_id, created_at DESC`,
+    `SELECT
+       c.citizen_user_id,
+       COALESCE(u.full_name, 'Citizen ' || c.citizen_user_id::text) AS citizen_name,
+       c.last_message,
+       c.last_at
+     FROM (
+       SELECT DISTINCT ON (citizen_user_id)
+         citizen_user_id,
+         message AS last_message,
+         created_at AS last_at
+       FROM chat_messages
+       WHERE company_id = $1 AND citizen_user_id IS NOT NULL
+       ORDER BY citizen_user_id, created_at DESC
+     ) c
+     LEFT JOIN users u ON c.citizen_user_id = u.id
+     ORDER BY c.last_at DESC`,
     [companyId]
   );
   return result.rows as ConversationSummary[];
