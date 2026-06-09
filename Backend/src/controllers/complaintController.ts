@@ -6,6 +6,7 @@ import {
   getAllComplaints,
   updateComplaintStatus,
   deleteComplaint,
+  getComplaintsByDistrict,
   ComplaintStatus,
   ComplaintPriority,
 } from "../models/complaintModel";
@@ -46,8 +47,19 @@ export const getMyComplaints = async (req: AuthRequest, res: Response): Promise<
 };
 
 // GET /api/complaints — Admin: get all complaints
-export const listAllComplaints = async (req: AuthRequest, res: Response): Promise<void> => {
+export const listAllComplaints = async (_req: AuthRequest, res: Response): Promise<void> => {
   const complaints = await getAllComplaints();
+  res.json(complaints);
+};
+
+// GET /api/complaints/district/:district — Waste collector sees complaints for their district
+export const getDistrictComplaints = async (req: AuthRequest, res: Response): Promise<void> => {
+  const district = req.params.district?.trim();
+  if (!district) {
+    res.status(400).json({ message: "district parameter is required" });
+    return;
+  }
+  const complaints = await getComplaintsByDistrict(district);
   res.json(complaints);
 };
 

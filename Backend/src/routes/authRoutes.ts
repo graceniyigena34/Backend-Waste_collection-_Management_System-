@@ -8,6 +8,8 @@ import {
   listUsers,
   updateUserById,
   deleteUserById,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/authController";
 import { authenticate, authorizeAdmin } from "../middleware/auth";
 
@@ -64,6 +66,8 @@ router.post("/register", register);
  *         description: Invalid credentials
  */
 router.post("/login", login);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 // ─── Profile (own account) ───────────────────────────────────────────────────
 

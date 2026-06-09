@@ -97,6 +97,18 @@ const options: swaggerJsdoc.Options = {
             message: { type: "string" },
           },
         },
+        ChatMessage: {
+          type: "object",
+          properties: {
+            id: { type: "integer", example: 1 },
+            company_id: { type: "integer", example: 7 },
+            user_id: { type: "integer", example: 3 },
+            sender_role: { type: "string", enum: ["citizen", "company"], example: "citizen" },
+            sender_name: { type: "string", example: "Grace Uwera" },
+            message: { type: "string", example: "Hello, when is the next collection?" },
+            created_at: { type: "string", format: "date-time" },
+          },
+        },
       },
     },
   },

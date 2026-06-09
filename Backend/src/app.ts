@@ -1,4 +1,4 @@
-import express, { Application } from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import swaggerUi from "swagger-ui-express";
@@ -14,6 +14,7 @@ import complaintRoutes from "./routes/complaintRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 
 import companyProfileRoutes from "./routes/companyProfileRoutes";
+import chatRoutes from "./routes/chatRoutes";
 
 // Table initializers
 import { initUsersTable } from "./models/userModel";
@@ -24,6 +25,7 @@ import { initComplaintsTable } from "./models/complaintModel";
 import { initNotificationsTable } from "./models/notificationModel";
 import { initWasteCompaniesTable, initWasteCollectorTables } from "./models/wasteCollectorModel";
 import { initCompanySchedulesTable } from "./models/companyScheduleModel";
+import { initChatTable } from "./models/chatModel";
 
 dotenv.config();
 
@@ -62,6 +64,7 @@ app.use("/api/complaints", complaintRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 app.use("/api/companies", companyProfileRoutes);
+app.use("/api/chat", chatRoutes);
 
 // Initialize all tables in order (respects foreign key dependencies)
 const initDB = async () => {
@@ -74,9 +77,17 @@ const initDB = async () => {
   await initWasteCompaniesTable();
   await initWasteCollectorTables();
   await initCompanySchedulesTable();
+  await initChatTable();
   console.log("✅ All database tables initialized");
 };
 
 initDB().catch(console.error);
+
+// Global error handler — must be registered after all routes
+// Returns a JSON error body instead of an HTML page so the frontend can display it
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("[Global Error]", err.message, err.stack);
+  res.status(500).json({ message: err.message || "Internal server error" });
+});
 
 export default app;
