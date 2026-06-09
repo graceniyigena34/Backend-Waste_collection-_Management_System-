@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { authenticate, authorizeAdmin } from "../middleware/auth";
+import { authenticate, authorizeAdmin, authorizeDriver } from "../middleware/auth";
 import {
   submitComplaint,
   getMyComplaints,
   listAllComplaints,
   patchComplaintStatus,
   removeComplaint,
+  getDistrictComplaints,
 } from "../controllers/complaintController";
 
 const router = Router();
@@ -48,6 +49,25 @@ router.post("/", authenticate, submitComplaint);
  *         description: List of citizen's complaints
  */
 router.get("/me", authenticate, getMyComplaints);
+
+/**
+ * @swagger
+ * /api/complaints/district/{district}:
+ *   get:
+ *     summary: Get complaints for a district (Waste Collector / Admin)
+ *     tags: [Complaints]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: district
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Complaints in the given district
+ */
+router.get("/district/:district", authenticate, authorizeDriver, getDistrictComplaints);
 
 /**
  * @swagger
