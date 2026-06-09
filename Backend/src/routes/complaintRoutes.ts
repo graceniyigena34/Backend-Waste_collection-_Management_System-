@@ -87,7 +87,7 @@ router.get("/", authenticate, authorizeAdmin, listAllComplaints);
  * @swagger
  * /api/complaints/{id}/status:
  *   patch:
- *     summary: Update complaint status (Admin only)
+ *     summary: Update complaint status (Admin or Waste Collector)
  *     tags: [Complaints]
  *     security:
  *       - bearerAuth: []
@@ -111,7 +111,7 @@ router.get("/", authenticate, authorizeAdmin, listAllComplaints);
  *       200:
  *         description: Complaint updated
  */
-router.patch("/:id/status", authenticate, authorizeAdmin, patchComplaintStatus);
+router.patch("/:id/status", authenticate, authorizeDriver, patchComplaintStatus);
 
 /**
  * @swagger
