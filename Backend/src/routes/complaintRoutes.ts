@@ -5,6 +5,7 @@ import {
   getMyComplaints,
   listAllComplaints,
   patchComplaintStatus,
+  editMyComplaint,
   removeComplaint,
   getDistrictComplaints,
 } from "../controllers/complaintController";
@@ -116,8 +117,27 @@ router.patch("/:id/status", authenticate, authorizeDriver, patchComplaintStatus)
 /**
  * @swagger
  * /api/complaints/{id}:
+ *   put:
+ *     summary: Edit a complaint (Citizen — own Pending complaints only)
+ *     tags: [Complaints]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Complaint updated
+ */
+router.put("/:id", authenticate, editMyComplaint);
+
+/**
+ * @swagger
+ * /api/complaints/{id}:
  *   delete:
- *     summary: Delete a complaint (Admin only)
+ *     summary: Delete a complaint (owner citizen, admin, or waste collector)
  *     tags: [Complaints]
  *     security:
  *       - bearerAuth: []
@@ -130,6 +150,6 @@ router.patch("/:id/status", authenticate, authorizeDriver, patchComplaintStatus)
  *       200:
  *         description: Complaint deleted
  */
-router.delete("/:id", authenticate, authorizeAdmin, removeComplaint);
+router.delete("/:id", authenticate, removeComplaint);
 
 export default router;

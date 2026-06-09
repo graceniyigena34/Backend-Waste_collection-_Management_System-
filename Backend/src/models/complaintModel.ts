@@ -81,8 +81,35 @@ export const updateComplaintStatus = async (
   return result.rows[0] || null;
 };
 
+export const updateComplaintContent = async (
+  id: number,
+  userId: number,
+  data: { issue_type?: string; description?: string; priority?: ComplaintPriority }
+): Promise<Complaint | null> => {
+  const result = await pool.query(
+    `UPDATE complaints
+     SET issue_type  = COALESCE($1, issue_type),
+         title       = COALESCE($1, title),
+         description = COALESCE($2, description),
+         priority    = COALESCE($3, priority),
+         updated_at  = NOW()
+     WHERE id = $4 AND user_id = $5 AND status = 'Pending'
+     RETURNING *`,
+    [data.issue_type ?? null, data.description ?? null, data.priority ?? null, id, userId]
+  );
+  return result.rows[0] ?? null;
+};
+
 export const deleteComplaint = async (id: number): Promise<boolean> => {
   const result = await pool.query("DELETE FROM complaints WHERE id = $1", [id]);
+  return (result.rowCount ?? 0) > 0;
+};
+
+export const deleteOwnComplaint = async (id: number, userId: number): Promise<boolean> => {
+  const result = await pool.query(
+    "DELETE FROM complaints WHERE id = $1 AND user_id = $2",
+    [id, userId]
+  );
   return (result.rowCount ?? 0) > 0;
 };
 

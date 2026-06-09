@@ -5,7 +5,9 @@ import {
   getComplaintsByUserId,
   getAllComplaints,
   updateComplaintStatus,
+  updateComplaintContent,
   deleteComplaint,
+  deleteOwnComplaint,
   getComplaintsByDistrict,
   ComplaintStatus,
   ComplaintPriority,
@@ -81,11 +83,41 @@ export const patchComplaintStatus = async (req: AuthRequest, res: Response): Pro
   res.json({ message: "Complaint updated", complaint: updated });
 };
 
-// DELETE /api/complaints/:id — Admin deletes a complaint
+// PUT /api/complaints/:id — citizen edits their own Pending complaint
+export const editMyComplaint = async (req: AuthRequest, res: Response): Promise<void> => {
+  const id = Number(req.params.id);
+  const { issue_type, description, priority } = req.body;
+
+  if (!issue_type && !description?.trim() && !priority) {
+    res.status(400).json({ message: "Provide at least one field to update" });
+    return;
+  }
+
+  const updated = await updateComplaintContent(id, req.user!.id, {
+    issue_type,
+    description: description?.trim(),
+    priority: VALID_PRIORITIES.includes(priority) ? priority : undefined,
+  });
+
+  if (!updated) {
+    res.status(404).json({ message: "Complaint not found, not yours, or no longer Pending" });
+    return;
+  }
+  res.json({ message: "Complaint updated", complaint: updated });
+};
+
+// DELETE /api/complaints/:id — owner (citizen) or admin/waste_collector
 export const removeComplaint = async (req: AuthRequest, res: Response): Promise<void> => {
-  const deleted = await deleteComplaint(Number(req.params.id));
+  const id = Number(req.params.id);
+  const role = req.user!.role;
+
+  const deleted =
+    role === "admin" || role === "waste_collector"
+      ? await deleteComplaint(id)
+      : await deleteOwnComplaint(id, req.user!.id);
+
   if (!deleted) {
-    res.status(404).json({ message: "Complaint not found" });
+    res.status(404).json({ message: "Complaint not found or not authorized" });
     return;
   }
   res.json({ message: "Complaint deleted" });
