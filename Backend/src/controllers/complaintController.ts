@@ -54,7 +54,7 @@ export const listAllComplaints = async (_req: AuthRequest, res: Response): Promi
 
 // GET /api/complaints/district/:district — Waste collector sees complaints for their district
 export const getDistrictComplaints = async (req: AuthRequest, res: Response): Promise<void> => {
-  const district = req.params.district?.trim();
+  const district = String(req.params.district ?? "").trim();
   if (!district) {
     res.status(400).json({ message: "district parameter is required" });
     return;
