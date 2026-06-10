@@ -7,9 +7,12 @@ import {
   makePayment,
   adminRecordPayment,
   patchPaymentStatus,
+  cashinPayment,
 } from "../controllers/paymentController";
 
 const router = Router();
+
+router.post("/cashin", authenticate, cashinPayment);
 
 /**
  * @swagger
