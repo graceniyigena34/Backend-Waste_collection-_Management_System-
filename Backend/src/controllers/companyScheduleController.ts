@@ -6,8 +6,11 @@ import {
   getCompanyScheduleById,
   getCompanySchedules,
   getCompanySchedulesByDate,
+  getSchedulesByDistrictAndSector,
+  setSchedulePublished,
   updateCompanySchedule,
 } from "../models/companyScheduleModel";
+import { getHouseholdByUserId } from "../models/householdModel";
 import { getCompanyProfileById } from "../models/wasteCollectorModel";
 
 const toNumber = (value: unknown): number | null => {
@@ -85,6 +88,7 @@ export const createCompanyScheduleEntry = async (req: AuthRequest, res: Response
     start_time,
     waste_type: waste_type || "General Waste",
     status: status || "Scheduled",
+    published: false,
     notes,
   });
 
@@ -114,6 +118,48 @@ export const updateCompanyScheduleEntry = async (req: AuthRequest, res: Response
 
   const updated = await updateCompanySchedule(companyId, scheduleId, req.body);
   res.json({ message: "Company schedule updated", schedule: updated });
+};
+
+export const toggleSchedulePublished = async (req: AuthRequest, res: Response): Promise<void> => {
+  const companyId = toNumber(req.params.companyId);
+  const scheduleId = toNumber(req.params.scheduleId);
+
+  if (!companyId || !scheduleId) {
+    res.status(400).json({ message: "companyId and scheduleId must be valid numbers" });
+    return;
+  }
+
+  const company = await getCompanyProfileById(companyId);
+  if (!company) {
+    res.status(404).json({ message: "Company not found" });
+    return;
+  }
+
+  const published: boolean = Boolean(req.body.published);
+  const schedule = await setSchedulePublished(companyId, scheduleId, published);
+  if (!schedule) {
+    res.status(404).json({ message: "Schedule not found" });
+    return;
+  }
+
+  res.json({ message: published ? "Schedule published" : "Schedule unpublished", schedule });
+};
+
+export const listSchedulesForCitizen = async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  const household = await getHouseholdByUserId(userId);
+  if (!household) {
+    res.status(404).json({ message: "No household found for your account. Please complete your household setup first." });
+    return;
+  }
+
+  const schedules = await getSchedulesByDistrictAndSector(household.district, household.sector);
+  res.json({ schedules, district: household.district, sector: household.sector });
 };
 
 export const removeCompanyScheduleEntry = async (req: AuthRequest, res: Response): Promise<void> => {

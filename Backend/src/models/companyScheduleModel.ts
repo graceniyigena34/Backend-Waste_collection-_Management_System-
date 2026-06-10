@@ -17,6 +17,7 @@ export interface CompanySchedule {
   start_time?: string;
   waste_type: string;
   status: CompanyScheduleStatus;
+  published: boolean;
   notes?: string;
   created_at?: Date;
   updated_at?: Date;
@@ -57,6 +58,7 @@ export const initCompanySchedulesTable = async () => {
     ALTER TABLE company_schedules ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'Scheduled';
     ALTER TABLE company_schedules ADD COLUMN IF NOT EXISTS notes TEXT;
     ALTER TABLE company_schedules ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+    ALTER TABLE company_schedules ADD COLUMN IF NOT EXISTS published BOOLEAN DEFAULT FALSE;
 
     CREATE INDEX IF NOT EXISTS company_schedules_company_id_idx ON company_schedules (company_id);
     CREATE INDEX IF NOT EXISTS company_schedules_company_day_idx ON company_schedules (company_id, day);
@@ -186,4 +188,41 @@ export const deleteCompanySchedule = async (companyId: number, scheduleId: numbe
   );
 
   return (result.rowCount ?? 0) > 0;
+};
+
+export const getSchedulesByDistrictAndSector = async (
+  district: string,
+  sector?: string,
+): Promise<CompanySchedule[]> => {
+  if (sector) {
+    const result = await pool.query(
+      `SELECT * FROM company_schedules
+       WHERE LOWER(district_name) = LOWER($1) AND LOWER(sector_name) = LOWER($2)
+         AND published = TRUE
+       ORDER BY schedule_date ASC`,
+      [district, sector],
+    );
+    return result.rows.map(toSchedule);
+  }
+
+  const result = await pool.query(
+    `SELECT * FROM company_schedules
+     WHERE LOWER(district_name) = LOWER($1) AND published = TRUE
+     ORDER BY schedule_date ASC`,
+    [district],
+  );
+  return result.rows.map(toSchedule);
+};
+
+export const setSchedulePublished = async (
+  companyId: number,
+  scheduleId: number,
+  published: boolean,
+): Promise<CompanySchedule | null> => {
+  const result = await pool.query(
+    `UPDATE company_schedules SET published = $1, updated_at = NOW()
+     WHERE company_id = $2 AND id = $3 RETURNING *`,
+    [published, companyId, scheduleId],
+  );
+  return result.rows[0] ? toSchedule(result.rows[0]) : null;
 };
