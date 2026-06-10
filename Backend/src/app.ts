@@ -13,12 +13,13 @@ import complaintRoutes from "./routes/complaintRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 
 import companyProfileRoutes from "./routes/companyProfileRoutes";
+import paypackRoutes from "./routes/paypackRoutes";
 
 // Table initializers
 import { initUsersTable } from "./models/userModel";
 import { initHouseholdsTable } from "./models/householdModel";
 import { initSchedulesTable } from "./models/scheduleModel";
-import { initPaymentsTable } from "./models/paymentModel";
+import { initPaymentsTable, initPaypackLogsTable } from "./models/paymentModel";
 import { initComplaintsTable } from "./models/complaintModel";
 import { initNotificationsTable } from "./models/notificationModel";
 import { initWasteCompaniesTable, initWasteCollectorTables } from "./models/wasteCollectorModel";
@@ -59,6 +60,7 @@ app.use("/api/complaints", complaintRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 app.use("/api/companies", companyProfileRoutes);
+app.use("/api/paypack", paypackRoutes);
 
 // Initialize all tables in order (respects foreign key dependencies)
 const initDB = async () => {
@@ -70,6 +72,7 @@ const initDB = async () => {
   await initNotificationsTable();
   await initWasteCompaniesTable();
   await initWasteCollectorTables();
+  await initPaypackLogsTable();
   console.log("✅ All database tables initialized");
 };
 
