@@ -14,14 +14,14 @@ import complaintRoutes from "./routes/complaintRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 
 import companyProfileRoutes from "./routes/companyProfileRoutes";
-import chatRoutes from "./routes/chatRoutes";
+import paypackRoutes from "./routes/paypackRoutes";
 import companyDriverRoutes from "./routes/companyDriverRoutes";
 
 // Table initializers
 import { initUsersTable } from "./models/userModel";
 import { initHouseholdsTable } from "./models/householdModel";
 import { initSchedulesTable } from "./models/scheduleModel";
-import { initPaymentsTable } from "./models/paymentModel";
+import { initPaymentsTable, initPaypackLogsTable } from "./models/paymentModel";
 import { initComplaintsTable } from "./models/complaintModel";
 import { initNotificationsTable } from "./models/notificationModel";
 import { initWasteCompaniesTable, initWasteCollectorTables } from "./models/wasteCollectorModel";
@@ -66,7 +66,7 @@ app.use("/api/complaints", complaintRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 app.use("/api/companies", companyProfileRoutes);
-app.use("/api/chat", chatRoutes);
+app.use("/api/paypack", paypackRoutes);
 app.use("/api/drivers", companyDriverRoutes);
 
 // Initialize all tables in order (respects foreign key dependencies)
@@ -79,9 +79,8 @@ const initDB = async () => {
   await initNotificationsTable();
   await initWasteCompaniesTable();
   await initWasteCollectorTables();
-  await initCompanySchedulesTable();
-  await initChatTable();
   await initCompanyDriversTable();
+  await initPaypackLogsTable();
   console.log("✅ All database tables initialized");
 };
 
