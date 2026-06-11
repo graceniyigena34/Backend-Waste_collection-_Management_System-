@@ -97,6 +97,21 @@ const options: swaggerJsdoc.Options = {
             message: { type: "string" },
           },
         },
+        CompanyVehicle: {
+          type: "object",
+          properties: {
+            id: { type: "integer", example: 1 },
+            company_id: { type: "integer", example: 7 },
+            plate_number: { type: "string", example: "RAB 123 A" },
+            model: { type: "string", example: "Isuzu NPR" },
+            year: { type: "string", example: "2020" },
+            capacity: { type: "string", example: "5 tons" },
+            assigned_zone: { type: "string", example: "Kicukiro" },
+            insurance_number: { type: "string", example: "INS-2024-001" },
+            status: { type: "string", example: "active" },
+            created_at: { type: "string", format: "date-time" },
+          },
+        },
         ChatMessage: {
           type: "object",
           properties: {
