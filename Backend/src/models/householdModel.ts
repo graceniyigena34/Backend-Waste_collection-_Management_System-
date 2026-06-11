@@ -86,3 +86,17 @@ export const getAllHouseholds = async (): Promise<(Household & { full_name: stri
   `);
   return result.rows;
 };
+
+export const getHouseholdsByDistrict = async (
+  district: string
+): Promise<(Household & { full_name: string; email: string; telephone: string })[]> => {
+  const result = await pool.query(
+    `SELECT h.*, u.full_name, u.email, u.telephone
+     FROM households h
+     JOIN users u ON h.user_id = u.id
+     WHERE LOWER(h.district) = LOWER($1)
+     ORDER BY h.created_at DESC`,
+    [district]
+  );
+  return result.rows;
+};

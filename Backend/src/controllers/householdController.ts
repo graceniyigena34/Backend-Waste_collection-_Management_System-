@@ -5,6 +5,7 @@ import {
   getHouseholdByUserId,
   updateHousehold,
   getAllHouseholds,
+  getHouseholdsByDistrict,
   HouseType,
 } from "../models/householdModel";
 
@@ -75,7 +76,18 @@ export const updateMyHousehold = async (req: AuthRequest, res: Response): Promis
 };
 
 // GET /api/households — Admin: get all households
-export const listAllHouseholds = async (req: AuthRequest, res: Response): Promise<void> => {
+export const listAllHouseholds = async (_req: AuthRequest, res: Response): Promise<void> => {
   const households = await getAllHouseholds();
   res.json(households);
+};
+
+// GET /api/households/district/:district — Waste collector: get citizens in their district
+export const listHouseholdsByDistrict = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { district } = req.params;
+  if (!district) {
+    res.status(400).json({ message: "district param is required" });
+    return;
+  }
+  const households = await getHouseholdsByDistrict(district);
+  res.json({ district, count: households.length, households });
 };

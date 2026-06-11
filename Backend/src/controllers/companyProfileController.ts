@@ -15,6 +15,7 @@ import {
   WasteCompanyProfile,
 } from "../models/wasteCollectorModel";
 import { createUser, deleteUser, findUserByEmail } from "../models/userModel";
+import { getHouseholdsByDistrict } from "../models/householdModel";
 
 /**
  * Create new company profile
@@ -542,6 +543,29 @@ export const suspendCompany = async (req: AuthRequest, res: Response): Promise<v
     res.json({ message: "Company suspended successfully", company: updatedCompany });
   } catch (error) {
     console.error("Error suspending company:", error);
+    res.status(500).json({ message: "Internal server error", error: (error as Error).message });
+  }
+};
+
+/**
+ * Get all citizens (households) registered in the company's district
+ */
+export const getCitizensByCompany = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const company = await getCompanyProfileById(Number(id));
+    if (!company) {
+      res.status(404).json({ message: "Company not found" });
+      return;
+    }
+    if (!company.district) {
+      res.json({ count: 0, citizens: [] });
+      return;
+    }
+    const citizens = await getHouseholdsByDistrict(company.district);
+    res.json({ count: citizens.length, district: company.district, citizens });
+  } catch (error) {
+    console.error("Error fetching citizens:", error);
     res.status(500).json({ message: "Internal server error", error: (error as Error).message });
   }
 };
