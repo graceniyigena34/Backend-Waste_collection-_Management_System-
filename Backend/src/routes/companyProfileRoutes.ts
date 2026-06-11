@@ -16,6 +16,7 @@ import {
   rejectCompany,
   suspendCompany,
   reactivateCompany,
+  getCitizensByCompany,
 } from "../controllers/companyProfileController";
 
 const router = Router();
@@ -121,6 +122,28 @@ router.post("/admin-create", authenticate, authorizeAdmin, createCompanyWithAcce
  *         description: List of all company profiles
  */
 router.get("/all", authenticate, getAllCompanies);
+
+/**
+ * @swagger
+ * /api/companies/{id}/citizens:
+ *   get:
+ *     summary: Get all citizens registered in the company's district
+ *     tags: [Company Profiles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of citizens in the company district
+ *       404:
+ *         description: Company not found
+ */
+router.get("/:id/citizens", authenticate, getCitizensByCompany);
 
 // ─── Get Company by ID ──────────────────────────────────────────────────────
 

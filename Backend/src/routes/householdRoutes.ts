@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { authenticate, authorizeAdmin } from "../middleware/auth";
+import { authenticate, authorizeAdmin, authorizeDriver } from "../middleware/auth";
 import {
   submitHousehold,
   getMyHousehold,
   updateMyHousehold,
   listAllHouseholds,
+  listHouseholdsByDistrict,
 } from "../controllers/householdController";
 
 const router = Router();
@@ -56,6 +57,8 @@ router.post("/", authenticate, submitHousehold);
  *         description: Household not found
  */
 router.get("/me", authenticate, getMyHousehold);
+
+router.get("/district/:district", authenticate, authorizeDriver, listHouseholdsByDistrict);
 
 /**
  * @swagger
