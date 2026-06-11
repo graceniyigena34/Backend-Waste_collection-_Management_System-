@@ -83,7 +83,7 @@ export const listAllHouseholds = async (_req: AuthRequest, res: Response): Promi
 
 // GET /api/households/district/:district — Waste collector: get citizens in their district
 export const listHouseholdsByDistrict = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { district } = req.params;
+  const district = (req.params as Record<string, string>).district ?? "";
   if (!district) {
     res.status(400).json({ message: "district param is required" });
     return;
