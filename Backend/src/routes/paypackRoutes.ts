@@ -1,19 +1,25 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth";
-import { cashIn, transactionStatus, webhook, pingPaypack } from "../controllers/paypackController";
+import {
+  cashIn,
+  transactionStatus,
+  webhookVerify,
+  webhookReceive,
+  ping,
+} from "../controllers/paypackController";
 
 const router = Router();
 
-// POST /api/paypack/cashin — authenticated citizen initiates Cash In
+// Authenticated payment endpoints
 router.post("/cashin", authenticate, cashIn);
-
-// GET /api/paypack/status/:ref — authenticated user polls transaction status
 router.get("/status/:ref", authenticate, transactionStatus);
 
-// POST /api/paypack/webhook — public, called by Paypack servers
-router.post("/webhook", webhook);
+// Webhook — GET and HEAD for Paypack URL verification, POST for events
+router.get("/webhook", webhookVerify);
+router.head("/webhook", webhookVerify);
+router.post("/webhook", webhookReceive);
 
-// GET /api/paypack/ping — connectivity test (no auth, safe read-only)
-router.get("/ping", pingPaypack);
+// Public connectivity check
+router.get("/ping", ping);
 
 export default router;
