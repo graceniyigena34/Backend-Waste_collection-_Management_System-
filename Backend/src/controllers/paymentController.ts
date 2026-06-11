@@ -11,6 +11,25 @@ import {
 } from "../models/paymentModel";
 import { getHouseholdByUserId } from "../models/householdModel";
 
+const PAYPACK_BASE = "https://api.paypack.rw";
+let _tokenCache: { token: string; expiresAt: number } | null = null;
+
+async function getPaypackToken(): Promise<string> {
+  if (_tokenCache && Date.now() < _tokenCache.expiresAt) return _tokenCache.token;
+  const res = await fetch(`${PAYPACK_BASE}/api/auth/agents/authorize`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      client_id: process.env.PAYPACK_CLIENT_ID,
+      client_secret: process.env.PAYPACK_CLIENT_SECRET,
+    }),
+  });
+  const data = await res.json() as { access: string };
+  if (!res.ok) throw new Error((data as unknown as { message: string }).message || `Paypack auth ${res.status}`);
+  _tokenCache = { token: data.access, expiresAt: Date.now() + 23 * 60 * 60 * 1000 };
+  return data.access;
+}
+
 const VALID_STATUSES: PaymentStatus[] = ["Paid", "Pending", "Overdue", "Failed"];
 const VALID_METHODS: PaymentMethod[] = ["Mobile Money", "Bank Transfer", "Cash"];
 
@@ -98,6 +117,56 @@ export const adminRecordPayment = async (req: AuthRequest, res: Response): Promi
   });
 
   res.status(201).json({ message: "Payment recorded", payment });
+};
+
+// POST /api/payments/cashin — Citizen initiates mobile money payment via Paypack
+export const cashinPayment = async (req: AuthRequest, res: Response): Promise<void> => {
+  const user_id = req.user!.id;
+  const { number, month, amount } = req.body;
+
+  if (!number || !month) {
+    res.status(400).json({ message: "number and month are required" });
+    return;
+  }
+
+  const household = await getHouseholdByUserId(user_id);
+  if (!household) {
+    res.status(404).json({ message: "Household not found. Complete your profile first." });
+    return;
+  }
+
+  const safeAmount = Number(amount) || 3000;
+
+  let paypackResult: { ref: string; status: string; amount: number; number: string };
+  try {
+    const token = await getPaypackToken();
+    const paypackRes = await fetch(`${PAYPACK_BASE}/api/transactions/cashin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ amount: safeAmount, number }),
+    });
+    const paypackData = await paypackRes.json() as { ref: string; status: string; amount: number; number: string; message?: string };
+    if (!paypackRes.ok) throw new Error(paypackData.message || `Paypack error ${paypackRes.status}`);
+    paypackResult = paypackData;
+  } catch (err) {
+    res.status(502).json({ message: `Paypack error: ${err instanceof Error ? err.message : err}` });
+    return;
+  }
+
+  const payment = await createPayment({
+    user_id,
+    household_id: household.id,
+    amount: safeAmount,
+    currency: "RWF",
+    method: "Mobile Money",
+    status: "Pending",
+    month,
+    description: "Monthly waste collection fee",
+    transaction_ref: paypackResult.ref,
+    paypack_ref: paypackResult.ref,
+  });
+
+  res.status(201).json({ message: "Payment initiated", payment, paypack: paypackResult });
 };
 
 // PATCH /api/payments/:id/status — Admin updates payment status
