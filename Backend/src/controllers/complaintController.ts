@@ -5,11 +5,16 @@ import {
   getComplaintsByUserId,
   getAllComplaints,
   updateComplaintStatus,
+  updateComplaintContent,
   deleteComplaint,
+  deleteOwnComplaint,
+  getComplaintsByDistrict,
   ComplaintStatus,
   ComplaintPriority,
 } from "../models/complaintModel";
 import { getHouseholdByUserId } from "../models/householdModel";
+import { createNotification } from "../models/notificationModel";
+import { getCompanyUserIdByDistrict } from "../models/wasteCollectorModel";
 
 const VALID_STATUSES: ComplaintStatus[] = ["Pending", "In Progress", "Resolved"];
 const VALID_PRIORITIES: ComplaintPriority[] = ["Low", "Medium", "High", "Urgent"];
@@ -36,6 +41,22 @@ export const submitComplaint = async (req: AuthRequest, res: Response): Promise<
     priority: safePriority,
   });
 
+  // Notify the company serving this district (fire-and-forget)
+  if (household?.district) {
+    getCompanyUserIdByDistrict(household.district)
+      .then((companyUserId) => {
+        if (companyUserId) {
+          return createNotification({
+            user_id: companyUserId,
+            title: "New Complaint Received",
+            message: `A new complaint about "${issue_type}" was submitted in your district.`,
+            type: "warning",
+          });
+        }
+      })
+      .catch(() => {});
+  }
+
   res.status(201).json({ message: "Complaint submitted successfully", complaint });
 };
 
@@ -46,8 +67,19 @@ export const getMyComplaints = async (req: AuthRequest, res: Response): Promise<
 };
 
 // GET /api/complaints — Admin: get all complaints
-export const listAllComplaints = async (req: AuthRequest, res: Response): Promise<void> => {
+export const listAllComplaints = async (_req: AuthRequest, res: Response): Promise<void> => {
   const complaints = await getAllComplaints();
+  res.json(complaints);
+};
+
+// GET /api/complaints/district/:district — Waste collector sees complaints for their district
+export const getDistrictComplaints = async (req: AuthRequest, res: Response): Promise<void> => {
+  const district = String(req.params.district ?? "").trim();
+  if (!district) {
+    res.status(400).json({ message: "district parameter is required" });
+    return;
+  }
+  const complaints = await getComplaintsByDistrict(district);
   res.json(complaints);
 };
 
@@ -66,14 +98,50 @@ export const patchComplaintStatus = async (req: AuthRequest, res: Response): Pro
     res.status(404).json({ message: "Complaint not found" });
     return;
   }
+
+  // Notify the citizen whose complaint was updated (fire-and-forget)
+  const notifType = status === "Resolved" ? "success" : "info";
+  const notifMsg = `Your complaint "${updated.issue_type}" status changed to "${status}".${resolution_note ? ` Note: ${resolution_note}` : ""}`;
+  createNotification({ user_id: updated.user_id, title: "Complaint Status Updated", message: notifMsg, type: notifType }).catch(() => {});
+
   res.json({ message: "Complaint updated", complaint: updated });
 };
 
-// DELETE /api/complaints/:id — Admin deletes a complaint
+// PUT /api/complaints/:id — citizen edits their own Pending complaint
+export const editMyComplaint = async (req: AuthRequest, res: Response): Promise<void> => {
+  const id = Number(req.params.id);
+  const { issue_type, description, priority } = req.body;
+
+  if (!issue_type && !description?.trim() && !priority) {
+    res.status(400).json({ message: "Provide at least one field to update" });
+    return;
+  }
+
+  const updated = await updateComplaintContent(id, req.user!.id, {
+    issue_type,
+    description: description?.trim(),
+    priority: VALID_PRIORITIES.includes(priority) ? priority : undefined,
+  });
+
+  if (!updated) {
+    res.status(404).json({ message: "Complaint not found, not yours, or no longer Pending" });
+    return;
+  }
+  res.json({ message: "Complaint updated", complaint: updated });
+};
+
+// DELETE /api/complaints/:id — owner (citizen) or admin/waste_collector
 export const removeComplaint = async (req: AuthRequest, res: Response): Promise<void> => {
-  const deleted = await deleteComplaint(Number(req.params.id));
+  const id = Number(req.params.id);
+  const role = req.user!.role;
+
+  const deleted =
+    role === "admin" || role === "waste_collector"
+      ? await deleteComplaint(id)
+      : await deleteOwnComplaint(id, req.user!.id);
+
   if (!deleted) {
-    res.status(404).json({ message: "Complaint not found" });
+    res.status(404).json({ message: "Complaint not found or not authorized" });
     return;
   }
   res.json({ message: "Complaint deleted" });
