@@ -4,6 +4,8 @@ import {
   createHousehold,
   getHouseholdByUserId,
   updateHousehold,
+  updateHouseholdById,
+  deleteHouseholdById,
   getAllHouseholds,
   getHouseholdsByDistrict,
   HouseType,
@@ -79,6 +81,36 @@ export const updateMyHousehold = async (req: AuthRequest, res: Response): Promis
 export const listAllHouseholds = async (_req: AuthRequest, res: Response): Promise<void> => {
   const households = await getAllHouseholds();
   res.json(households);
+};
+
+// PATCH /api/households/:id — Admin: update any household
+export const adminUpdateHousehold = async (req: AuthRequest, res: Response): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!id || isNaN(id)) { res.status(400).json({ message: "Invalid id" }); return; }
+  const { district, sector, cell, village, street_address, house_type, residents, notes, zone, status } = req.body;
+  const fields: Record<string, unknown> = {};
+  if (district)      { fields.district = district; fields.zone = district; }
+  if (sector)        fields.sector = sector;
+  if (cell)          fields.cell = cell;
+  if (village)       fields.village = village;
+  if (street_address) fields.street_address = street_address;
+  if (house_type && VALID_HOUSE_TYPES.includes(house_type)) fields.house_type = house_type;
+  if (residents)     fields.residents = Number(residents);
+  if (notes !== undefined) fields.notes = notes;
+  if (zone)          fields.zone = zone;
+  if (status)        fields.status = status;
+  const updated = await updateHouseholdById(id, fields as any);
+  if (!updated) { res.status(404).json({ message: "Household not found" }); return; }
+  res.json({ message: "Household updated", household: updated });
+};
+
+// DELETE /api/households/:id — Admin: delete a household
+export const adminDeleteHousehold = async (req: AuthRequest, res: Response): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!id || isNaN(id)) { res.status(400).json({ message: "Invalid id" }); return; }
+  const deleted = await deleteHouseholdById(id);
+  if (!deleted) { res.status(404).json({ message: "Household not found" }); return; }
+  res.json({ message: "Household deleted" });
 };
 
 // GET /api/households/district/:district — Waste collector: get citizens in their district

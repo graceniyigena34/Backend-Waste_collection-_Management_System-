@@ -87,6 +87,26 @@ export const getAllHouseholds = async (): Promise<(Household & { full_name: stri
   return result.rows;
 };
 
+export const updateHouseholdById = async (
+  id: number,
+  data: Partial<Omit<Household, "id" | "user_id" | "created_at">>
+): Promise<Household | null> => {
+  const keys = Object.keys(data) as (keyof typeof data)[];
+  if (keys.length === 0) return getHouseholdById(id);
+  const setClauses = keys.map((k, i) => `${k} = $${i + 1}`).join(", ");
+  const values = keys.map(k => data[k]);
+  const result = await pool.query(
+    `UPDATE households SET ${setClauses}, updated_at = NOW() WHERE id = $${keys.length + 1} RETURNING *`,
+    [...values, id],
+  );
+  return result.rows[0] ?? null;
+};
+
+export const deleteHouseholdById = async (id: number): Promise<boolean> => {
+  const result = await pool.query(`DELETE FROM households WHERE id = $1`, [id]);
+  return (result.rowCount ?? 0) > 0;
+};
+
 export const getHouseholdsByDistrict = async (
   district: string
 ): Promise<(Household & { full_name: string; email: string; telephone: string })[]> => {

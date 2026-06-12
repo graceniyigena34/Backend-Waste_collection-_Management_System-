@@ -6,6 +6,8 @@ import {
   updateMyHousehold,
   listAllHouseholds,
   listHouseholdsByDistrict,
+  adminUpdateHousehold,
+  adminDeleteHousehold,
 } from "../controllers/householdController";
 
 const router = Router();
@@ -101,5 +103,7 @@ router.put("/me", authenticate, updateMyHousehold);
  *         description: List of all households
  */
 router.get("/", authenticate, authorizeAdmin, listAllHouseholds);
+router.patch("/:id", authenticate, authorizeAdmin, adminUpdateHousehold);
+router.delete("/:id", authenticate, authorizeAdmin, adminDeleteHousehold);
 
 export default router;
