@@ -11,7 +11,8 @@ import {
   PickupPriority,
 } from "../models/pickupRequestModel";
 import { createNotification } from "../models/notificationModel";
-import { getUserIdByCompanyId } from "../models/wasteCollectorModel";
+import { getCompanyUserIdByDistrict } from "../models/wasteCollectorModel";
+import { getHouseholdByUserId } from "../models/householdModel";
 
 const VALID_STATUSES: PickupStatus[]   = ["Pending", "In Progress", "Resolved", "Cancelled"];
 const VALID_PRIORITIES: PickupPriority[] = ["Low", "Medium", "High", "Urgent"];
@@ -37,6 +38,24 @@ export const submitPickupRequest = async (req: AuthRequest, res: Response): Prom
     notes: notes ?? null,
     priority: safePriority,
   });
+
+  // Notify the company that serves the citizen's district (fire-and-forget)
+  getHouseholdByUserId(userId)
+    .then(async (household) => {
+      if (!household?.district) return;
+      const companyUserId = await getCompanyUserIdByDistrict(household.district);
+      if (!companyUserId) return;
+      const dateLabel = new Date(preferred_date).toLocaleDateString("en-RW", {
+        weekday: "long", year: "numeric", month: "long", day: "numeric",
+      });
+      await createNotification({
+        user_id: companyUserId,
+        title: "New Pickup Request",
+        message: `A citizen in ${household.district} has requested a pickup on ${dateLabel}${preferred_time ? ` at ${preferred_time}` : ""}.${notes ? ` Note: ${notes}` : ""} Priority: ${safePriority}.`,
+        type: "info",
+      });
+    })
+    .catch(() => {});
 
   res.status(201).json({ message: "Pickup request submitted", request });
 };
