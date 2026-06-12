@@ -18,6 +18,7 @@ import paypackRoutes from "./routes/paypackRoutes";
 import companyDriverRoutes from "./routes/companyDriverRoutes";
 import companyVehicleRoutes from "./routes/companyVehicleRoutes";
 import chatRoutes from "./routes/chatRoutes";
+import pickupRequestRoutes from "./routes/pickupRequestRoutes";
 
 // Table initializers
 import { initUsersTable } from "./models/userModel";
@@ -31,6 +32,7 @@ import { initCompanySchedulesTable } from "./models/companyScheduleModel";
 import { initChatTable } from "./models/chatModel";
 import { initCompanyDriversTable } from "./models/companyDriverModel";
 import { initCompanyVehiclesTable } from "./models/companyVehicleModel";
+import { initPickupRequestsTable } from "./models/pickupRequestModel";
 
 dotenv.config();
 
@@ -129,6 +131,7 @@ app.use("/api/paypack", paypackRoutes);
 app.use("/api/drivers", companyDriverRoutes);
 app.use("/api/vehicles", companyVehicleRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/pickup-requests", pickupRequestRoutes);
 
 // Initialize all tables in order (respects foreign key dependencies)
 const initDB = async () => {
@@ -143,6 +146,7 @@ const initDB = async () => {
   await initCompanyDriversTable();
   await initCompanyVehiclesTable();
   await initPaypackLogsTable();
+  await initPickupRequestsTable();
   console.log("✅ All database tables initialized");
 };
 
