@@ -151,8 +151,19 @@ initDB().catch(console.error);
 // Global error handler — must be registered after all routes
 // Returns a JSON error body instead of an HTML page so the frontend can display it
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error("[Global Error]", err.message, err.stack);
-  res.status(500).json({ message: err.message || "Internal server error" });
+  const isDbDown = err.message?.includes("ENOTFOUND") ||
+    err.message?.includes("Connection terminated") ||
+    err.message?.includes("connection timeout") ||
+    err.message?.includes("ECONNREFUSED");
+
+  if (isDbDown) {
+    // Suppress stack trace for known DB-unavailable errors — resume Neon at console.neon.tech
+    console.warn("[DB unavailable]", err.message);
+  } else {
+    console.error("[Global Error]", err.message, err.stack);
+  }
+
+  res.status(500).json({ message: isDbDown ? "Database temporarily unavailable. Please try again." : err.message || "Internal server error" });
 });
 
 export default app;
