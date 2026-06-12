@@ -10,7 +10,8 @@ import {
   setSchedulePublished,
   updateCompanySchedule,
 } from "../models/companyScheduleModel";
-import { getHouseholdByUserId } from "../models/householdModel";
+import { getHouseholdByUserId, getHouseholdsByDistrict } from "../models/householdModel";
+import { createNotification } from "../models/notificationModel";
 import { getCompanyProfileById } from "../models/wasteCollectorModel";
 
 const toNumber = (value: unknown): number | null => {
@@ -140,6 +141,31 @@ export const toggleSchedulePublished = async (req: AuthRequest, res: Response): 
   if (!schedule) {
     res.status(404).json({ message: "Schedule not found" });
     return;
+  }
+
+  // When publishing, notify all citizens in the schedule's district
+  if (published && schedule.district_name) {
+    try {
+      const households = await getHouseholdsByDistrict(schedule.district_name);
+      const dateLabel = schedule.schedule_date
+        ? new Date(schedule.schedule_date).toLocaleDateString("en-RW", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+        : schedule.day;
+      const sectorLabel = schedule.sector_name ? ` (${schedule.sector_name} sector)` : "";
+      const timeLabel = schedule.start_time ? ` at ${schedule.start_time}` : "";
+
+      await Promise.allSettled(
+        households.map((h) =>
+          createNotification({
+            user_id: h.user_id,
+            title: `Waste Collection Scheduled — ${schedule.day}`,
+            message: `${company.company_name} has scheduled ${schedule.waste_type ?? "waste"} collection for ${schedule.district_name}${sectorLabel} on ${dateLabel}${timeLabel}. Please have your waste ready.`,
+            type: "info",
+          })
+        )
+      );
+    } catch {
+      // Notification errors must not block the publish response
+    }
   }
 
   res.json({ message: published ? "Schedule published" : "Schedule unpublished", schedule });

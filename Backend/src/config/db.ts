@@ -34,3 +34,12 @@ export const pool = new Pool(poolConfig);
 pool.on("error", (err) => {
   console.error("[pg pool] idle client error:", err.message);
 });
+
+// Ping Neon every 4 minutes to prevent free-tier auto-pause (5-min timeout)
+setInterval(async () => {
+  try {
+    await pool.query("SELECT 1");
+  } catch {
+    // Ignore — pool will reconnect on next real request
+  }
+}, 4 * 60 * 1000);
