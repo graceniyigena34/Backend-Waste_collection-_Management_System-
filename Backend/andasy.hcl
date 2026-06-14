@@ -21,7 +21,7 @@ app {
     SMTP_SECURE    = "false"
     SMTP_USER      = "graceniyigena34@gmail.com"
     SMTP_FROM      = "EcoTrack <graceniyigena34@gmail.com>"
-    FRONTEND_URL   = "http://192.168.56.1:3000"
+    FRONTEND_URL   = "https://waste-collection-management-system.vercel.app"
   }
 
   port = 8000
