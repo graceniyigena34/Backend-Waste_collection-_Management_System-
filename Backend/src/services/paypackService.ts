@@ -1,7 +1,7 @@
 import https from "https";
 import http from "http";
 
-const PAYPACK_BASE = "https://api.paypack.rw";
+const PAYPACK_BASE = "https://payments.paypack.rw";
 
 interface TokenCache {
   token: string;
