@@ -8,7 +8,10 @@ const options: swaggerJsdoc.Options = {
       version: "1.0.0",
       description: "API documentation for GreenEx waste collection platform",
     },
-    servers: [{ url: "http://localhost:8000" }],
+    servers: [
+      { url: "https://waste-collection-backend.andasy.dev", description: "Production" },
+      { url: "http://localhost:8000", description: "Local" },
+    ],
     components: {
       securitySchemes: {
         bearerAuth: {
