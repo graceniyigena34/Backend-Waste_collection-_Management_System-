@@ -60,13 +60,14 @@ async function getToken(): Promise<string> {
 
   if (tokenCache && Date.now() < tokenCache.expiresAt) return tokenCache.token;
 
-  const res = await request<{ access: string; refresh: string }>(
+  const res = await request<{ access: string; refresh: string; expires: number }>(
     "POST",
     `${PAYPACK_BASE}/api/auth/agents/authorize`,
     { client_id: id, client_secret: secret }
   );
 
-  tokenCache = { token: res.access, expiresAt: Date.now() + 23 * 60 * 60 * 1000 };
+  // expires is a Unix timestamp in seconds; subtract 60s buffer to refresh before actual expiry
+  tokenCache = { token: res.access, expiresAt: res.expires * 1000 - 60_000 };
   console.log("[Paypack] Token refreshed");
   return res.access;
 }
@@ -100,14 +101,42 @@ export interface TransactionStatus {
   updated_at: string;
 }
 
+interface PaypackTxn {
+  ref: string;
+  amount: number;
+  fee: number;
+  kind: string;
+  provider: string;
+  client: string;
+  timestamp: string;
+}
+
 export async function getTransactionStatus(ref: string): Promise<TransactionStatus> {
   const token = await getToken();
-  return request<TransactionStatus>(
-    "GET",
-    `${PAYPACK_BASE}/api/transactions/find/${encodeURIComponent(ref)}`,
-    undefined,
-    token
-  );
+  try {
+    const txn = await request<PaypackTxn>(
+      "GET",
+      `${PAYPACK_BASE}/api/transactions/find/${encodeURIComponent(ref)}`,
+      undefined,
+      token
+    );
+    // Paypack returns no status field — existence of the record means it was processed successfully
+    return {
+      ref: txn.ref,
+      status: "successful",
+      amount: txn.amount,
+      number: txn.client,
+      kind: txn.kind,
+      created_at: txn.timestamp,
+      updated_at: txn.timestamp,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.toLowerCase().includes("not found")) {
+      return { ref, status: "pending", amount: 0, number: "", kind: "CASHIN", created_at: "", updated_at: "" };
+    }
+    throw err;
+  }
 }
 
 export async function pingPaypackAPI(): Promise<boolean> {
