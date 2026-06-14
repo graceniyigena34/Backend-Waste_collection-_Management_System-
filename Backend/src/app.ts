@@ -116,11 +116,16 @@ app.get("/", (_req, res) => {
     health: "/api/health",
   });
 });
-// Swagger docs — disable CDN caching so server updates are reflected immediately
-app.use("/api-docs", (_req: Request, res: Response, next: NextFunction) => {
+// Serve the spec from a dedicated uncached endpoint so CDN changes never stale it
+app.get("/api-docs/spec.json", (_req: Request, res: Response) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-  next();
-}, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  res.json(swaggerSpec);
+});
+
+// Swagger UI — loads spec from /api-docs/spec.json instead of the inline init file
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(undefined, {
+  swaggerOptions: { url: "/api-docs/spec.json" },
+}));
 
 // API routes
 app.use("/api/auth", authRoutes);
