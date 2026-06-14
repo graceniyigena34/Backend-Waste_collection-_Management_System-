@@ -25,6 +25,7 @@ COPY package-lock.json package.json ./
 RUN npm ci --include=dev
 
 # Copy application code
+ARG CACHEBUST=2
 COPY . .
 
 # Build application

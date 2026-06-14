@@ -116,8 +116,11 @@ app.get("/", (_req, res) => {
     health: "/api/health",
   });
 });
-// Swagger docs
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Swagger docs — disable CDN caching so server updates are reflected immediately
+app.use("/api-docs", (_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  next();
+}, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // API routes
 app.use("/api/auth", authRoutes);
